@@ -9,7 +9,6 @@ plugins {
 	id 'com.github.spotbugs' version '5.0.3'
 	id 'com.google.cloud.tools.jib'
 	id 'io.freefair.lombok'
-	id 'org.hidetake.swagger.generator'
 }
 
 compileJava { options.release = 11 }
@@ -23,6 +22,7 @@ repositories {
 
 description = 'Azure Relay Listener'
 
+apply from: 'publishing.gradle'
 apply from: 'spring.gradle'
 apply from: 'generators.gradle'
 apply from: 'tooling.gradle'

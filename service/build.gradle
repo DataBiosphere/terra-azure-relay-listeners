@@ -21,9 +21,8 @@ repositories {
 }
 
 
-description = 'Martha in Java'
+description = 'Azure Relay Listener'
 
-apply from: 'publishing.gradle'
 apply from: 'spring.gradle'
 apply from: 'generators.gradle'
 apply from: 'tooling.gradle'
@@ -32,7 +31,7 @@ apply from: 'analysis.gradle'
 dependencies {
 	annotationProcessor 'org.immutables:value:2.8.8'
 	implementation('bio.terra:terra-common-lib:0.0.53-SNAPSHOT') {
-		// remove transitive database deps, martha has no db
+		// remove transitive database deps
 		exclude group: 'org.liquibase', module: 'liquibase-core'
 		exclude group: 'bio.terra', module: 'stairway-gcp'
 		exclude group: 'bio.terra', module: 'stairway'

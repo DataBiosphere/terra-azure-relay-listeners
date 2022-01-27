@@ -5,5 +5,5 @@ pluginManagement {
 	}
 }
 
-rootProject.name = 'martha'
+rootProject.name = 'terra-azure-relay-listener'
 include 'service'

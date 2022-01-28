@@ -24,7 +24,6 @@ description = 'Azure Relay Listener'
 
 apply from: 'publishing.gradle'
 apply from: 'spring.gradle'
-apply from: 'generators.gradle'
 apply from: 'tooling.gradle'
 apply from: 'analysis.gradle'
 

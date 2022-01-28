@@ -15,18 +15,11 @@ subprojects {
 	group = 'org.broadinstitute'
 	version = '1.0.0'
 
-	ext {
-		artifactGroup = "${group}.${rootProject.name}"
-	}
-
 	apply plugin: 'io.spring.dependency-management'
 
 	dependencyManagement {
 		imports {
 			mavenBom(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES)
-		}
-
-		dependencies {
 		}
 	}
 }

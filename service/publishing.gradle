@@ -1,0 +1,11 @@
+jib {
+	from {
+		image = "us.gcr.io/broad-dsp-gcr-public/base/jre:11-debian"
+	}
+	container {
+		filesModificationTime = ZonedDateTime.now().toString() // to prevent ui caching
+		jvmFlags = [
+				"-logtostderr,-minloglevel=2"
+		]
+	}
+}

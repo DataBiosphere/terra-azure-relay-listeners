@@ -1,0 +1,4 @@
+openapi: 3.0.3
+info:
+  title: Terra Azure Relay Listener
+  version: 2.0.0

@@ -1,6 +1,5 @@
 package org.broadinstitute.listener.relay.transport;
 
-import org.broadinstitute.listener.relay.http.LocalHttpResponseWriter;
 import org.broadinstitute.listener.relay.http.RelayedHttpRequestProcessor;
 import org.broadinstitute.listener.relay.http.RelayedHttpRequestReceiver;
 import org.broadinstitute.listener.relay.wss.WebSocketConnectionsHandler;
@@ -15,7 +14,6 @@ public class RelayedRequestPipeline {
 
   private final RelayedHttpRequestReceiver httpRequestReceiver;
   private final RelayedHttpRequestProcessor httpRequestProcessor;
-  private final LocalHttpResponseWriter httpResponseWriter;
   private final WebSocketConnectionsHandler webSocketConnectionsHandler;
   private final WebSocketConnectionsRelayerService webSocketConnectionsRelayerService;
 
@@ -24,12 +22,10 @@ public class RelayedRequestPipeline {
   public RelayedRequestPipeline(
       @NonNull RelayedHttpRequestReceiver requestReceiver,
       @NonNull RelayedHttpRequestProcessor requestExecutor,
-      @NonNull LocalHttpResponseWriter responseWriter,
       @NonNull WebSocketConnectionsHandler wsReader,
       @NonNull WebSocketConnectionsRelayerService webSocketConnectionsRelayerService) {
     this.httpRequestReceiver = requestReceiver;
     this.httpRequestProcessor = requestExecutor;
-    this.httpResponseWriter = responseWriter;
 
     this.webSocketConnectionsHandler = wsReader;
     this.webSocketConnectionsRelayerService = webSocketConnectionsRelayerService;
@@ -42,7 +38,7 @@ public class RelayedRequestPipeline {
     httpRequestReceiver
         .receiveRelayedHttpRequests()
         .map(request -> httpRequestProcessor.executeLocalRequest(request))
-        .map(localHttpResponse -> httpResponseWriter.writeLocalResponse(localHttpResponse))
+        .map(localHttpResponse -> httpRequestProcessor.writeLocalResponse(localHttpResponse))
         .subscribe(
             result -> logger.info("Processed request with the following result: {}", result));
 

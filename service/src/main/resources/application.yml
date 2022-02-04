@@ -3,3 +3,8 @@ server:
 
 spring:
   application.name: terra-azure-relay-listener
+
+listener:
+  relayConnectionString:
+  relayConnectionName: "echo"
+  targetHost: "http://localhost:8888"

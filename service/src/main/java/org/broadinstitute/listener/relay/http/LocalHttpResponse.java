@@ -11,7 +11,10 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.http.client.utils.URIBuilder;
 
-/** Represents an response of the local endpoint that is independent from the HTTP client. */
+/**
+ * Represents a response of the local endpoint that is independent of the HTTP client
+ * implementation.
+ */
 public class LocalHttpResponse extends HttpMessage {
 
   public int getStatusCode() {

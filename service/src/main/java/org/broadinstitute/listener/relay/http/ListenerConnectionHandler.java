@@ -10,13 +10,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
-public class RelayedHttpRequestReceiver {
+public class ListenerConnectionHandler {
 
   private final HybridConnectionListener listener;
   private final String targetHost;
-  protected final Logger logger = LoggerFactory.getLogger(RelayedHttpRequestReceiver.class);
+  protected final Logger logger = LoggerFactory.getLogger(ListenerConnectionHandler.class);
 
-  public RelayedHttpRequestReceiver(
+  public ListenerConnectionHandler(
       @NonNull HybridConnectionListener listener, @NonNull TargetHostResolver targetHostResolver) {
 
     this.listener = listener;

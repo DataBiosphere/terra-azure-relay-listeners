@@ -6,19 +6,19 @@ import java.util.Optional;
 
 public abstract class HttpMessage {
 
-  private final Optional<Map<String, String>> headers;
-  private final Optional<InputStream> body;
+  private final Map<String, String> headers;
+  private final InputStream body;
 
   protected HttpMessage(Map<String, String> headers, InputStream body) {
-    this.headers = Optional.ofNullable(headers);
-    this.body = Optional.ofNullable(body);
+    this.headers = headers;
+    this.body = body;
   }
 
   public Optional<Map<String, String>> getHeaders() {
-    return headers;
+    return Optional.ofNullable(headers);
   }
 
   public Optional<InputStream> getBody() {
-    return body;
+    return Optional.ofNullable(body);
   }
 }

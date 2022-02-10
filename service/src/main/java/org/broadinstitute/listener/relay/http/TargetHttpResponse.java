@@ -2,6 +2,7 @@ package org.broadinstitute.listener.relay.http;
 
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -15,7 +16,7 @@ import org.apache.http.client.utils.URIBuilder;
  * Represents a response of the local endpoint that is independent of the HTTP client
  * implementation.
  */
-public class LocalHttpResponse extends HttpMessage {
+public class TargetHttpResponse extends HttpMessage {
 
   public int getStatusCode() {
     return statusCode;
@@ -29,7 +30,7 @@ public class LocalHttpResponse extends HttpMessage {
   private final RelayedHttpListenerContext context;
   private final String statusDescription;
 
-  private LocalHttpResponse(
+  private TargetHttpResponse(
       Map<String, String> headers,
       InputStream body,
       int statusCode,
@@ -41,7 +42,11 @@ public class LocalHttpResponse extends HttpMessage {
     this.context = context;
   }
 
-  public static LocalHttpResponse createErrorLocalHttpResponse(
+  public OutputStream getCallerResponseOutputStream() {
+    return (OutputStream) context.getResponse().getOutputStream();
+  }
+
+  public static TargetHttpResponse createTargetHttpResponseFromException(
       int statusCode, Exception ex, RelayedHttpListenerContext context) {
 
     String statusDescription = "";
@@ -49,12 +54,11 @@ public class LocalHttpResponse extends HttpMessage {
       statusDescription = ex.getMessage();
     }
 
-    return new LocalHttpResponse(null, null, statusCode, statusDescription, context);
+    return new TargetHttpResponse(null, null, statusCode, statusDescription, context);
   }
 
-  public static LocalHttpResponse createLocalHttpResponse(
-      HttpResponse<?> clientHttpResponse, RelayedHttpListenerContext context)
-      throws MalformedURLException, URISyntaxException {
+  public static TargetHttpResponse createTargetHttpResponse(
+      HttpResponse<?> clientHttpResponse, RelayedHttpListenerContext context) {
     int responseStatusCode = clientHttpResponse.statusCode();
     Map<String, String> responseHeaders = new HashMap<>();
     if (clientHttpResponse.headers() != null && !clientHttpResponse.headers().map().isEmpty()) {
@@ -66,11 +70,9 @@ public class LocalHttpResponse extends HttpMessage {
           .forEach((key, value) -> responseHeaders.put(key, value.iterator().next()));
     }
 
-    responseHeaders.put("ServiceBusAuthorization", createRelayToken(context));
-
     InputStream body = (InputStream) clientHttpResponse.body();
 
-    return new LocalHttpResponse(responseHeaders, body, responseStatusCode, "", context);
+    return new TargetHttpResponse(responseHeaders, body, responseStatusCode, "", context);
   }
 
   private static String createRelayToken(RelayedHttpListenerContext context)

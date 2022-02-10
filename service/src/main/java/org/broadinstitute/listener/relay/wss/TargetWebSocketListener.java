@@ -9,12 +9,12 @@ import java.util.concurrent.CompletionStage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class LocalWebSocketListener implements Listener {
+public class TargetWebSocketListener implements Listener {
 
-  private final Logger logger = LoggerFactory.getLogger(LocalWebSocketListener.class);
+  private final Logger logger = LoggerFactory.getLogger(TargetWebSocketListener.class);
   private final HybridConnectionChannel connectionChannel;
 
-  public LocalWebSocketListener(HybridConnectionChannel connectionChannel) {
+  public TargetWebSocketListener(HybridConnectionChannel connectionChannel) {
     this.connectionChannel = connectionChannel;
   }
 

@@ -21,13 +21,13 @@ public class WebSocketConnectionsHandler {
 
   private final HybridConnectionListener listener;
   private final Logger logger = LoggerFactory.getLogger(WebSocketConnectionsHandler.class);
-  private final String targetHost;
+  private final TargetHostResolver targetHost;
   private final Map<String, RelayedHttpRequest> acceptedRequests;
 
   public WebSocketConnectionsHandler(
       @NonNull HybridConnectionListener listener, @NonNull TargetHostResolver targetHostResolver) {
     this.listener = listener;
-    this.targetHost = targetHostResolver.resolveTargetHost();
+    this.targetHost = targetHostResolver;
     acceptedRequests = new HashMap<>();
   }
 
@@ -37,11 +37,11 @@ public class WebSocketConnectionsHandler {
     return relayedHttpRequest;
   }
 
-  public synchronized RelayedHttpRequest getAcceptedRelayedRequest(String trackingId) {
+  private synchronized RelayedHttpRequest getAcceptedRelayedRequest(String trackingId) {
     return acceptedRequests.getOrDefault(trackingId, null);
   }
 
-  public synchronized void removeAcceptedRelayedRequest(String trackingId) {
+  private synchronized void removeAcceptedRelayedRequest(String trackingId) {
     if (!acceptedRequests.containsKey(trackingId)) {
       acceptedRequests.remove(trackingId);
     }
@@ -57,7 +57,8 @@ public class WebSocketConnectionsHandler {
                     RelayedHttpRequest request =
                         addAcceptedRelayedRequest(
                             context.getTrackingContext().getTrackingId(),
-                            RelayedHttpRequest.createRelayedHttpRequest(context, targetHost));
+                            RelayedHttpRequest.createRelayedHttpRequest(
+                                context, targetHost.resolveTargetHost()));
                     sink.next(request);
                   } catch (Exception e) {
                     logger.error("Failed to create a relayed http request", e);
@@ -83,6 +84,8 @@ public class WebSocketConnectionsHandler {
                   return;
                 }
 
+                // remove request from the list
+                removeAcceptedRelayedRequest(connection.getTrackingContext().getTrackingId());
                 sink.error(
                     new IllegalStateException(
                         "Invalid connection state. The connection was not Open"));
@@ -121,12 +124,9 @@ public class WebSocketConnectionsHandler {
     }
 
     try {
+      URI wsTargetUri = request.getWebSocketTargetUri();
       WebSocket ws =
-          builder
-              .buildAsync(
-                  URI.create(request.getTargetURL().toString().replace("http://", "ws://")),
-                  new LocalWebSocketListener(relayedConnection))
-              .join();
+          builder.buildAsync(wsTargetUri, new TargetWebSocketListener(relayedConnection)).join();
       removeAcceptedRelayedRequest(trackingId);
 
       return ws;

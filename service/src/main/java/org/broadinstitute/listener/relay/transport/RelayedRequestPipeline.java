@@ -1,7 +1,7 @@
 package org.broadinstitute.listener.relay.transport;
 
+import org.broadinstitute.listener.relay.http.ListenerConnectionHandler;
 import org.broadinstitute.listener.relay.http.RelayedHttpRequestProcessor;
-import org.broadinstitute.listener.relay.http.RelayedHttpRequestReceiver;
 import org.broadinstitute.listener.relay.wss.WebSocketConnectionsHandler;
 import org.broadinstitute.listener.relay.wss.WebSocketConnectionsRelayerService;
 import org.slf4j.Logger;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class RelayedRequestPipeline {
 
-  private final RelayedHttpRequestReceiver httpRequestReceiver;
+  private final ListenerConnectionHandler httpRequestReceiver;
   private final RelayedHttpRequestProcessor httpRequestProcessor;
   private final WebSocketConnectionsHandler webSocketConnectionsHandler;
   private final WebSocketConnectionsRelayerService webSocketConnectionsRelayerService;
@@ -20,7 +20,7 @@ public class RelayedRequestPipeline {
   private final Logger logger = LoggerFactory.getLogger(RelayedRequestPipeline.class);
 
   public RelayedRequestPipeline(
-      @NonNull RelayedHttpRequestReceiver requestReceiver,
+      @NonNull ListenerConnectionHandler requestReceiver,
       @NonNull RelayedHttpRequestProcessor requestExecutor,
       @NonNull WebSocketConnectionsHandler wsReader,
       @NonNull WebSocketConnectionsRelayerService webSocketConnectionsRelayerService) {
@@ -37,8 +37,10 @@ public class RelayedRequestPipeline {
     logger.info("Registering HTTP pipeline");
     httpRequestReceiver
         .receiveRelayedHttpRequests()
-        .map(request -> httpRequestProcessor.executeLocalRequest(request))
-        .map(localHttpResponse -> httpRequestProcessor.writeLocalResponse(localHttpResponse))
+        .map(request -> httpRequestProcessor.executeRequestOnTarget(request))
+        .map(
+            localHttpResponse ->
+                httpRequestProcessor.writeTargetResponseOnCaller(localHttpResponse))
         .subscribe(
             result -> logger.info("Processed request with the following result: {}", result));
 
@@ -46,7 +48,7 @@ public class RelayedRequestPipeline {
     webSocketConnectionsHandler
         .acceptHttpUpgradeRequests()
         .subscribe(
-            request -> logger.info("Accepted request. Target URI:{}", request.getTargetURL()));
+            request -> logger.info("Accepted request. Target URI:{}", request.getTargetUrl()));
 
     httpRequestReceiver
         .openConnection()

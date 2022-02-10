@@ -17,28 +17,28 @@ import org.springframework.lang.NonNull;
  * local target URI.
  *
  * <p>Its main purpose is to provide an abstraction to facilitate the implementation of functional
- * and non-functional logic when it's created from the context relayed request.
+ * and non-functional logic when created from the context relayed request.
  */
 public class RelayedHttpRequest extends HttpMessage {
 
   private static final String WS_HC_SEGMENT = "/$hc";
 
-  public URL getTargetURL() {
-    return targetURL;
+  public URL getTargetUrl() {
+    return targetUrl;
   }
 
-  private final URL targetURL;
+  private final URL targetUrl;
   private final String method;
   private final RelayedHttpListenerContext context;
 
   private RelayedHttpRequest(
-      URL targetURL,
+      URL targetUrl,
       String method,
       Map<String, String> headers,
       InputStream body,
       RelayedHttpListenerContext context) {
     super(headers, body);
-    this.targetURL = targetURL;
+    this.targetUrl = targetUrl;
     this.method = method;
     this.context = context;
   }
@@ -65,26 +65,26 @@ public class RelayedHttpRequest extends HttpMessage {
       relayedBody = listenerRequest.getInputStream();
     }
 
-    URL targetURL = createTargetURIFromRelayContext(targetHost, listenerRequest.getUri());
+    URL targetURL = createTargetUriFromRelayContext(targetHost, listenerRequest.getUri());
 
     return new RelayedHttpRequest(
         targetURL, listenerRequest.getHttpMethod(), relayedHeaders, relayedBody, context);
   }
 
-  public static URL createTargetURIFromRelayContext(String targetHost, URI relayedRequestURI)
+  private static URL createTargetUriFromRelayContext(String targetHost, URI relayedRequestUri)
       throws InvalidRelayTargetException {
 
     // remove the WSS segment from the URI
-    String path = relayedRequestURI.getPath().replace(WS_HC_SEGMENT, "");
+    String path = relayedRequestUri.getPath().replace(WS_HC_SEGMENT, "");
 
     // remove trailing slash from the host and the leading slash for the path
     path = StringUtils.stripStart(path, "/");
     String host = StringUtils.stripEnd(targetHost, "/");
 
     String query = "";
-    if (StringUtils.isNotBlank(relayedRequestURI.getQuery())) {
+    if (StringUtils.isNotBlank(relayedRequestUri.getQuery())) {
 
-      query = "?" + relayedRequestURI.getQuery();
+      query = "?" + relayedRequestUri.getQuery();
     }
 
     try {
@@ -96,9 +96,21 @@ public class RelayedHttpRequest extends HttpMessage {
           String.format(
               Locale.ROOT,
               "The target URL could not be parsed. Request URI: %s",
-              relayedRequestURI),
+              relayedRequestUri),
           e);
     }
+  }
+
+  public URI getWebSocketTargetUri() {
+    if (targetUrl.getProtocol().equals("http")) {
+      return URI.create(targetUrl.toString().replaceFirst("http://", "ws://"));
+    }
+
+    if (targetUrl.getProtocol().equals("https")) {
+      return URI.create(targetUrl.toString().replaceFirst("https://", "wss://"));
+    }
+
+    throw new RuntimeException("Invalid target URL. The target must be an HTTP/HTTPS endpoint");
   }
 
   public String getMethod() {

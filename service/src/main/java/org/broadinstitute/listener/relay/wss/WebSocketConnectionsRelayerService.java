@@ -1,9 +1,5 @@
 package org.broadinstitute.listener.relay.wss;
 
-import com.microsoft.azure.relay.HybridConnectionChannel;
-import com.microsoft.azure.relay.WebSocketChannel;
-import java.io.IOException;
-import java.net.http.WebSocket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.slf4j.Logger;
@@ -26,50 +22,33 @@ public class WebSocketConnectionsRelayerService {
     executorService.shutdown();
   }
 
-  private void relayDataToLocalEndpoint(@NonNull ConnectionsPair connectionsPair) {
-    HybridConnectionChannel callerConnection = connectionsPair.getCallerConnection();
-    WebSocket localWebSocket = connectionsPair.getLocalWebSocketConnection();
+  public void readAndSendText(@NonNull ConnectionsPair connectionsPair) {
+
+    logger.info("Reading from the caller connection.");
+    String data = connectionsPair.readTextFromCaller();
+
+    logger.info("Sending data to local connection.");
+    connectionsPair.sendTextToLocalWebSocket(data);
+    logger.info("Data sent successfully");
+  }
+
+  public void relayDataToLocalEndpoint(@NonNull ConnectionsPair connectionsPair) {
 
     logger.info("Read and send operation starting");
     while (connectionsPair.isConnectionsStateOpen()) {
 
-      logger.info("Reading from the caller connection.");
-      String data = null;
       try {
-        data =
-            WebSocketTextIOUtils.readTextAsync(
-                    (WebSocketChannel) connectionsPair.getCallerConnection())
-                .join();
+        readAndSendText(connectionsPair);
       } catch (Exception e) {
         logger.error("Error while reading data from the caller socket.", e);
+        connectionsPair.close();
       }
-
-      logger.info("Sending data to local connection.");
-      localWebSocket.sendText(data, true);
-      logger.info("Data sent successfully");
     }
 
     logger.info("Close remaining connection");
-    close(callerConnection, localWebSocket);
-  }
-
-  private void close(HybridConnectionChannel callerConnection, WebSocket localWebSocket) {
-
-    if (callerConnection.isOpen()) {
-      try {
-
-        logger.info("Attempting to close the caller connection");
-        callerConnection.close();
-        logger.info("Caller connection is closed");
-      } catch (IOException e) {
-        logger.error("Failed to close connection", e);
-      }
-    }
-
-    if (!localWebSocket.isInputClosed()) {
-      logger.info("Attempting to close the local connection");
-      localWebSocket.sendClose(500, "Remote caller is not available");
-      logger.info("Local connection is closed");
-    }
+    // calling the method again if one of the connections in the
+    // pair is still open.
+    // as it checks if the connection is open before closing it.
+    connectionsPair.close();
   }
 }

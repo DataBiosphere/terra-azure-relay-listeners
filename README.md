@@ -35,7 +35,7 @@ Where HYBRID_CONNECTION_NAME is the configured Hybrid Connection name.
 `c.NotebookApp.websocket_url= 'wss://<AZURE_RELAYED_HOST>>/$hc'`
 
 
-## Known Issues
+## Additional Considerations
 
 - `Host` and `Via` HTTP headers are not forwarded to the private endpoint.
 - WebSocket connections must target a specific URI pattern:

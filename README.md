@@ -15,7 +15,7 @@ The Terra Azure Relay Listener establishes a bi-directional channel with Azure R
 >*Note*: The connection string must contain an EntityPath parameter.
 > The value of EntityPath must be the Hybrid Connection name.
 
-`relayConnectionName:` Hybrid Connection name. Must the same same value as the EntityPath.
+`relayConnectionName:` Hybrid Connection name. Must the same value as the EntityPath.
 
 `targetHost:` The local or private endpoint where the listener must forward all requests.
 
@@ -37,7 +37,7 @@ Where HYBRID_CONNECTION_NAME is the configured Hybrid Connection name.
 
 ## Known Issues
 
-- `Host` and `Via` HTTP headers are not forward to the private endpoint.
+- `Host` and `Via` HTTP headers are not forwarded to the private endpoint.
 - WebSocket connections must target a specific URI pattern:
   - wss://<RELAY_HOST>/$hc/<HYBRID_CONNECTION_NAME>
 

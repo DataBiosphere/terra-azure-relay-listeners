@@ -6,5 +6,8 @@ spring:
 
 listener:
   relayConnectionString:
-  relayConnectionName: "echo"
-  targetHost: "http://localhost:8888"
+  relayConnectionName:
+  targetProperties:
+    targetHost:
+
+

@@ -57,9 +57,7 @@ public class RelayedRequestPipeline {
                 // we can't start accepting connections until the connection is open
                 webSocketConnectionsHandler
                     .acceptConnections()
-                    .map(
-                        callerConnection ->
-                            webSocketConnectionsHandler.createLocalConnection(callerConnection))
+                    .map(webSocketConnectionsHandler::createLocalConnection)
                     .subscribe(
                         connectionsPair ->
                             webSocketConnectionsRelayerService.startDataRelay(connectionsPair)));

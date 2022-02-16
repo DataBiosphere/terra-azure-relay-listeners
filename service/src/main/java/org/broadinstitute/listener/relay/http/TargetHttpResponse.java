@@ -3,13 +3,16 @@ package org.broadinstitute.listener.relay.http;
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.HttpCookie;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 
 /**
@@ -62,17 +65,30 @@ public class TargetHttpResponse extends HttpMessage {
     int responseStatusCode = clientHttpResponse.statusCode();
     Map<String, String> responseHeaders = new HashMap<>();
     if (clientHttpResponse.headers() != null && !clientHttpResponse.headers().map().isEmpty()) {
+
       // TODO: implement multi header value support.
       // only the first header value is set for now.
       clientHttpResponse
           .headers()
           .map()
-          .forEach((key, value) -> responseHeaders.put(key, value.iterator().next()));
+          .forEach(
+              (key, value) -> {
+                String headerValue = value.iterator().next();
+                responseHeaders.put(key, headerValue);
+              });
     }
 
     InputStream body = (InputStream) clientHttpResponse.body();
 
     return new TargetHttpResponse(responseHeaders, body, responseStatusCode, "", context);
+  }
+
+  private static String resetPathInCookies(String cookieHeader) {
+    List<HttpCookie> cookies = HttpCookie.parse(cookieHeader);
+
+    cookies.forEach(c -> c.setPath("/"));
+
+    return StringUtils.join(cookies, ";");
   }
 
   private static String createRelayToken(RelayedHttpListenerContext context)

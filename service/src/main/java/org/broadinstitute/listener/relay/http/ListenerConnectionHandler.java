@@ -1,7 +1,7 @@
 package org.broadinstitute.listener.relay.http;
 
 import com.microsoft.azure.relay.HybridConnectionListener;
-import org.broadinstitute.listener.relay.transport.TargetHostResolver;
+import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
@@ -13,14 +13,14 @@ import reactor.core.publisher.Mono;
 public class ListenerConnectionHandler {
 
   private final HybridConnectionListener listener;
-  private final String targetHost;
+  private final TargetResolver targetResolver;
   protected final Logger logger = LoggerFactory.getLogger(ListenerConnectionHandler.class);
 
   public ListenerConnectionHandler(
-      @NonNull HybridConnectionListener listener, @NonNull TargetHostResolver targetHostResolver) {
+      @NonNull HybridConnectionListener listener, @NonNull TargetResolver targetResolver) {
 
     this.listener = listener;
-    this.targetHost = targetHostResolver.resolveTargetHost();
+    this.targetResolver = targetResolver;
   }
 
   public Flux<RelayedHttpRequest> receiveRelayedHttpRequests() {
@@ -31,7 +31,7 @@ public class ListenerConnectionHandler {
                 context -> {
                   try {
                     logger.info("Received HTTP request. URI: {}", context.getRequest().getUri());
-                    sink.next(RelayedHttpRequest.createRelayedHttpRequest(context, targetHost));
+                    sink.next(RelayedHttpRequest.createRelayedHttpRequest(context, targetResolver));
                   } catch (Exception ex) {
                     logger.error("Error while creating relayed HTTP request.", ex);
                     sink.error(ex);

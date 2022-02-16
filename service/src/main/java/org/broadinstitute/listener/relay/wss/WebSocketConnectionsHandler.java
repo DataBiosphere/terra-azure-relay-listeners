@@ -2,13 +2,14 @@ package org.broadinstitute.listener.relay.wss;
 
 import com.microsoft.azure.relay.HybridConnectionChannel;
 import com.microsoft.azure.relay.HybridConnectionListener;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.util.HashMap;
 import java.util.Map;
 import org.broadinstitute.listener.relay.http.RelayedHttpRequest;
-import org.broadinstitute.listener.relay.transport.TargetHostResolver;
+import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
@@ -21,13 +22,13 @@ public class WebSocketConnectionsHandler {
 
   private final HybridConnectionListener listener;
   private final Logger logger = LoggerFactory.getLogger(WebSocketConnectionsHandler.class);
-  private final TargetHostResolver targetHost;
+  private final TargetResolver targetResolver;
   private final Map<String, RelayedHttpRequest> acceptedRequests;
 
   public WebSocketConnectionsHandler(
-      @NonNull HybridConnectionListener listener, @NonNull TargetHostResolver targetHostResolver) {
+      @NonNull HybridConnectionListener listener, @NonNull TargetResolver targetResolver) {
     this.listener = listener;
-    this.targetHost = targetHostResolver;
+    this.targetResolver = targetResolver;
     acceptedRequests = new HashMap<>();
   }
 
@@ -57,8 +58,7 @@ public class WebSocketConnectionsHandler {
                     RelayedHttpRequest request =
                         addAcceptedRelayedRequest(
                             context.getTrackingContext().getTrackingId(),
-                            RelayedHttpRequest.createRelayedHttpRequest(
-                                context, targetHost.resolveTargetHost()));
+                            RelayedHttpRequest.createRelayedHttpRequest(context, targetResolver));
                     sink.next(request);
                   } catch (Exception e) {
                     logger.error("Failed to create a relayed http request", e);
@@ -99,8 +99,14 @@ public class WebSocketConnectionsHandler {
 
   public ConnectionsPair createLocalConnection(@NonNull HybridConnectionChannel relayedConnection) {
 
-    return new ConnectionsPair(
-        relayedConnection, createWebSocketFromRelayedHttpRequest(relayedConnection));
+    try {
+      return new ConnectionsPair(
+          relayedConnection, createWebSocketFromRelayedHttpRequest(relayedConnection));
+
+    } catch (Exception e) {
+      logger.error("Error while creating the connection pair");
+      throw e;
+    }
   }
 
   private WebSocket createWebSocketFromRelayedHttpRequest(
@@ -124,7 +130,7 @@ public class WebSocketConnectionsHandler {
     }
 
     try {
-      URI wsTargetUri = request.getWebSocketTargetUri();
+      URI wsTargetUri = request.getTargetWebSocketUri();
       WebSocket ws =
           builder.buildAsync(wsTargetUri, new TargetWebSocketListener(relayedConnection)).join();
       removeAcceptedRelayedRequest(trackingId);
@@ -132,6 +138,11 @@ public class WebSocketConnectionsHandler {
       return ws;
     } catch (Exception ex) {
       logger.error("Error while opening local web socket connection", ex);
+      try {
+        relayedConnection.close();
+      } catch (IOException e) {
+        logger.error("Failed to close caller connection.");
+      }
       throw ex;
     }
   }

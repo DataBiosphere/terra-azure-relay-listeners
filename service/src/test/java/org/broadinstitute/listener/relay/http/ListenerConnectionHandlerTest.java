@@ -3,10 +3,12 @@ package org.broadinstitute.listener.relay.http;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.microsoft.azure.relay.HybridConnectionListener;
-import org.broadinstitute.listener.relay.transport.TargetHostResolver;
+import org.broadinstitute.listener.config.ListenerProperties;
+import org.broadinstitute.listener.config.TargetProperties;
+import org.broadinstitute.listener.relay.transport.DefaultTargetResolver;
+import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,20 +18,22 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class ListenerConnectionHandlerTest {
   private static final String TARGET_HOST = "http://localhost:8080/";
-
-  @Mock private TargetHostResolver targetHostResolver;
+  private TargetResolver targetResolver;
   @Mock private HybridConnectionListener listener;
 
   private ListenerConnectionHandler listenerConnectionHandler;
 
   @BeforeEach
   void setUp() {
-    when(targetHostResolver.resolveTargetHost()).thenReturn(TARGET_HOST);
+    ListenerProperties properties = new ListenerProperties();
+    properties.setTargetProperties(new TargetProperties());
+    properties.getTargetProperties().setTargetHost(TARGET_HOST);
+    targetResolver = new DefaultTargetResolver(properties);
   }
 
   @Test
   void receiveRelayedHttpRequests_handlerIsSet() {
-    listenerConnectionHandler = new ListenerConnectionHandler(listener, targetHostResolver);
+    listenerConnectionHandler = new ListenerConnectionHandler(listener, targetResolver);
 
     listenerConnectionHandler.receiveRelayedHttpRequests().subscribe();
 
@@ -38,7 +42,7 @@ class ListenerConnectionHandlerTest {
 
   @Test
   void openConnection_listenerConnectionOpens() {
-    listenerConnectionHandler = new ListenerConnectionHandler(listener, targetHostResolver);
+    listenerConnectionHandler = new ListenerConnectionHandler(listener, targetResolver);
 
     listenerConnectionHandler.openConnection().subscribe();
 
@@ -47,7 +51,7 @@ class ListenerConnectionHandlerTest {
 
   @Test
   void closeConnection_listenerConnectionCloses() {
-    listenerConnectionHandler = new ListenerConnectionHandler(listener, targetHostResolver);
+    listenerConnectionHandler = new ListenerConnectionHandler(listener, targetResolver);
 
     listenerConnectionHandler.closeConnection().subscribe();
 

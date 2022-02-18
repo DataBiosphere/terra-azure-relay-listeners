@@ -14,7 +14,7 @@ public class WebSocketConnectionsRelayerService {
   private final ExecutorService executorService = Executors.newCachedThreadPool();
 
   public void startDataRelay(@NonNull ConnectionsPair connectionsPair) {
-    logger.info("Submitting read operation");
+    logger.info("Submitting read operation. Tracking ID:{}", connectionsPair.getTrackingId());
     executorService.execute(() -> relayDataToLocalEndpoint(connectionsPair));
   }
 
@@ -24,31 +24,51 @@ public class WebSocketConnectionsRelayerService {
 
   public void readAndSendText(@NonNull ConnectionsPair connectionsPair) {
 
-    logger.info("Reading from the caller connection.");
+    String trackingId = connectionsPair.getTrackingId();
+
+    logger.info("Reading from the caller connection. Tracking ID:{}", trackingId);
     String data = connectionsPair.readTextFromCaller();
 
-    logger.info("Sending data to local connection.");
+    if (data == null) {
+      logger.info("Received null data from the caller. Tracking ID:{}", trackingId);
+      return;
+    }
+
+    logger.info("Read {} bytes from the caller. Tracking ID:{}", data.length(), trackingId);
+
     connectionsPair.sendTextToLocalWebSocket(data);
-    logger.info("Data sent successfully");
+
+    logger.info(
+        "Sent {} bytes to the target connection. Tracking ID:{} ", data.length(), trackingId);
+
+    logger.info("Data read and sent successfully. Tracking ID:{} ", trackingId);
   }
 
   public void relayDataToLocalEndpoint(@NonNull ConnectionsPair connectionsPair) {
 
-    logger.info("Read and send operation starting");
+    logger.info(
+        "Read and send operation starting. Tracking ID:{}", connectionsPair.getTrackingId());
     while (connectionsPair.isConnectionsStateOpen()) {
 
       try {
         readAndSendText(connectionsPair);
       } catch (Exception e) {
-        logger.error("Error while reading data from the caller socket.", e);
+        logger.error(
+            "Error while reading data from the caller socket. Tracking ID:{}",
+            connectionsPair.getTrackingId(),
+            e);
         connectionsPair.close();
       }
     }
 
-    logger.info("Close remaining connection");
+    logger.info(
+        "Stopped WebSocket relay processing. Connections are not open. Tracking ID:{}",
+        connectionsPair.getTrackingId());
+
     // calling the method again if one of the connections in the
     // pair is still open.
-    // as it checks if the connection is open before closing it.
+    // It is okay to make the call again as it checks if the connection is open before closing it.
     connectionsPair.close();
+    logger.info("Closed connection pair. Tracking ID:{}", connectionsPair.getTrackingId());
   }
 }

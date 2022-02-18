@@ -17,22 +17,25 @@ The Terra Azure Relay Listener establishes a bi-directional channel with Azure R
 
 `relayConnectionName:` Hybrid Connection name. Must the same value as the EntityPath.
 
-`targetHost:` The local or private endpoint where the listener must forward all requests.
+`targetProperties.targetHost:` The local or private endpoint where the listener must forward all requests.
 
-## Running Jupiter Notebooks
+## Running Jupyter Notebooks
 
 To enable access to a Jupyter Notebooks server instance via Azure Relay using the listener,
 the following configuration settings are required.
 
 `c.NotebookApp.allow_origin = '*'`
 
-*Note*: You could add specific Azure Relay origin if required.
+*Note*: You could add an specific Azure Relay origin if required.
 
 `c.NotebookApp.base_url = '/<HYBRID CONNECTION NAME>/'`
 
 Where HYBRID_CONNECTION_NAME is the configured Hybrid Connection name.
 
 `c.NotebookApp.websocket_url= 'wss://<AZURE_RELAYED_HOST>>/$hc'`
+
+*Note*: For Jupyter Lab you must add the connection name to the URL,
+e.g.: `wss://myrelay.servicebus.windows.net/$hc/myconnection`.
 
 
 ## Additional Considerations

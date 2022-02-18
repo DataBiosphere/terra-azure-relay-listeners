@@ -11,6 +11,23 @@ import org.springframework.lang.NonNull;
 public class ConnectionsPair {
 
   private final Logger logger = LoggerFactory.getLogger(WebSocketConnectionsRelayerService.class);
+
+  public HybridConnectionChannel getCallerConnection() {
+    return callerConnection;
+  }
+
+  public WebSocket getLocalWebSocketConnection() {
+    return localWebSocketConnection;
+  }
+
+  public String getTrackingId() {
+    if (callerConnection == null || callerConnection.getTrackingContext() == null) {
+      return "";
+    }
+
+    return callerConnection.getTrackingContext().getTrackingId();
+  }
+
   private final HybridConnectionChannel callerConnection;
   private final WebSocket localWebSocketConnection;
 

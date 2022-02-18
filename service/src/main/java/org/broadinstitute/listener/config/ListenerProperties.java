@@ -7,7 +7,7 @@ public class ListenerProperties {
 
   private String relayConnectionString;
   private String relayConnectionName;
-  private String targetHost;
+  private TargetProperties targetProperties;
 
   public String getRelayConnectionString() {
     return relayConnectionString;
@@ -25,11 +25,11 @@ public class ListenerProperties {
     this.relayConnectionName = relayConnectionName;
   }
 
-  public String getTargetHost() {
-    return targetHost;
+  public TargetProperties getTargetProperties() {
+    return targetProperties;
   }
 
-  public void setTargetHost(String targetHost) {
-    this.targetHost = targetHost;
+  public void setTargetProperties(TargetProperties targetProperties) {
+    this.targetProperties = targetProperties;
   }
 }

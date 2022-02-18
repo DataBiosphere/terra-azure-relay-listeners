@@ -6,10 +6,9 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
-import org.apache.commons.lang3.StringUtils;
 import org.broadinstitute.listener.relay.InvalidRelayTargetException;
+import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.springframework.lang.NonNull;
 
 /**
@@ -31,24 +30,29 @@ public class RelayedHttpRequest extends HttpMessage {
   private final String method;
   private final RelayedHttpListenerContext context;
 
+  public URI getTargetWebSocketUri() {
+    return targetWebSocketUri;
+  }
+
+  private final URI targetWebSocketUri;
+
   private RelayedHttpRequest(
       URL targetUrl,
       String method,
       Map<String, String> headers,
       InputStream body,
-      RelayedHttpListenerContext context) {
+      RelayedHttpListenerContext context,
+      URI targetWebSocketUri) {
     super(headers, body);
     this.targetUrl = targetUrl;
     this.method = method;
     this.context = context;
+    this.targetWebSocketUri = targetWebSocketUri;
   }
 
   public static RelayedHttpRequest createRelayedHttpRequest(
-      @NonNull RelayedHttpListenerContext context, String targetHost)
+      @NonNull RelayedHttpListenerContext context, @NonNull TargetResolver targetResolver)
       throws InvalidRelayTargetException {
-    if (StringUtils.isBlank(targetHost)) {
-      throw new IllegalArgumentException("The target host is blank or null.");
-    }
 
     RelayedHttpListenerRequest listenerRequest = context.getRequest();
 
@@ -65,52 +69,16 @@ public class RelayedHttpRequest extends HttpMessage {
       relayedBody = listenerRequest.getInputStream();
     }
 
-    URL targetURL = createTargetUriFromRelayContext(targetHost, listenerRequest.getUri());
+    URL targetUrl = targetResolver.createTargetUrl(listenerRequest.getUri());
+    URI targetWebSocketUri = targetResolver.createTargetWebSocketUri(listenerRequest.getUri());
 
     return new RelayedHttpRequest(
-        targetURL, listenerRequest.getHttpMethod(), relayedHeaders, relayedBody, context);
-  }
-
-  private static URL createTargetUriFromRelayContext(String targetHost, URI relayedRequestUri)
-      throws InvalidRelayTargetException {
-
-    // remove the WSS segment from the URI
-    String path = relayedRequestUri.getPath().replace(WS_HC_SEGMENT, "");
-
-    // remove trailing slash from the host and the leading slash for the path
-    path = StringUtils.stripStart(path, "/");
-    String host = StringUtils.stripEnd(targetHost, "/");
-
-    String query = "";
-    if (StringUtils.isNotBlank(relayedRequestUri.getQuery())) {
-
-      query = "?" + relayedRequestUri.getQuery();
-    }
-
-    try {
-      URI uri = new URI(String.format(Locale.ROOT, "%s/%s%s", host, path, query));
-
-      return uri.toURL();
-    } catch (Exception e) {
-      throw new InvalidRelayTargetException(
-          String.format(
-              Locale.ROOT,
-              "The target URL could not be parsed. Request URI: %s",
-              relayedRequestUri),
-          e);
-    }
-  }
-
-  public URI getWebSocketTargetUri() {
-    if (targetUrl.getProtocol().equals("http")) {
-      return URI.create(targetUrl.toString().replaceFirst("http://", "ws://"));
-    }
-
-    if (targetUrl.getProtocol().equals("https")) {
-      return URI.create(targetUrl.toString().replaceFirst("https://", "wss://"));
-    }
-
-    throw new RuntimeException("Invalid target URL. The target must be an HTTP/HTTPS endpoint");
+        targetUrl,
+        listenerRequest.getHttpMethod(),
+        relayedHeaders,
+        relayedBody,
+        context,
+        targetWebSocketUri);
   }
 
   public String getMethod() {

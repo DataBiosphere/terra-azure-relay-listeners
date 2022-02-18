@@ -30,10 +30,16 @@ public class ListenerConnectionHandler {
             listener.setRequestHandler(
                 context -> {
                   try {
-                    logger.info("Received HTTP request. URI: {}", context.getRequest().getUri());
+                    logger.info(
+                        "Received HTTP request. URI: {}. Tracking ID:{}",
+                        context.getRequest().getUri(),
+                        context.getTrackingContext().getTrackingId());
                     sink.next(RelayedHttpRequest.createRelayedHttpRequest(context, targetResolver));
                   } catch (Exception ex) {
-                    logger.error("Error while creating relayed HTTP request.", ex);
+                    logger.error(
+                        "Error while creating relayed HTTP request. Tracking ID:{}",
+                        context.getTrackingContext().getTrackingId(),
+                        ex);
                     sink.error(ex);
                   }
                 }));

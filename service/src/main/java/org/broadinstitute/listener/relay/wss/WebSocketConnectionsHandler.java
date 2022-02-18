@@ -105,7 +105,7 @@ public class WebSocketConnectionsHandler {
 
     } catch (Exception e) {
       logger.error("Error while creating the connection pair");
-      throw e;
+      throw new RuntimeException("Error creating the connection pair", e);
     }
   }
 
@@ -129,21 +129,33 @@ public class WebSocketConnectionsHandler {
       }
     }
 
+    return getWebSocketConnection(relayedConnection, trackingId, request, builder);
+  }
+
+  private WebSocket getWebSocketConnection(
+      HybridConnectionChannel relayedConnection,
+      String trackingId,
+      RelayedHttpRequest request,
+      WebSocket.Builder builder) {
     try {
       URI wsTargetUri = request.getTargetWebSocketUri();
+
       WebSocket ws =
-          builder.buildAsync(wsTargetUri, new TargetWebSocketListener(relayedConnection)).join();
+          builder.buildAsync(wsTargetUri, new TargetWebSocketListener(relayedConnection)).get();
       removeAcceptedRelayedRequest(trackingId);
+
+      logger.info("Successfully created target WebSocket connection. Tracking ID:{}", trackingId);
 
       return ws;
     } catch (Exception ex) {
-      logger.error("Error while opening local web socket connection", ex);
+      logger.error(
+          "Error while opening target WebSocket connection. Tracking ID:{}", trackingId, ex);
       try {
         relayedConnection.close();
       } catch (IOException e) {
-        logger.error("Failed to close caller connection.");
+        logger.error("Failed to close caller connection.Tracking ID:{}", trackingId, ex);
       }
-      throw ex;
+      throw new RuntimeException("Failed to create Target WebSocket.", ex);
     }
   }
 }

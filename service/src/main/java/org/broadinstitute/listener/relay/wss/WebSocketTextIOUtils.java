@@ -22,7 +22,7 @@ public class WebSocketTextIOUtils {
   }
 
   public static CompletableFuture<Void> writeTextAsync(
-      @NonNull WebSocketChannel webSocketChannel, String text)
+      @NonNull WebSocketChannel webSocketChannel, String text, boolean last)
       throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
     Method writeAsync =
         webSocketChannel
@@ -32,6 +32,6 @@ public class WebSocketTextIOUtils {
     writeAsync.setAccessible(true);
 
     return (CompletableFuture<Void>)
-        writeAsync.invoke(webSocketChannel, text, Duration.ofSeconds(30), true, WriteMode.TEXT);
+        writeAsync.invoke(webSocketChannel, text, Duration.ofSeconds(30), last, WriteMode.TEXT);
   }
 }

@@ -37,10 +37,8 @@ public class RelayedRequestPipeline {
     logger.info("Registering HTTP pipeline");
     httpRequestReceiver
         .receiveRelayedHttpRequests()
-        .map(request -> httpRequestProcessor.executeRequestOnTarget(request))
-        .map(
-            localHttpResponse ->
-                httpRequestProcessor.writeTargetResponseOnCaller(localHttpResponse))
+        .map(httpRequestProcessor::executeRequestOnTarget)
+        .map(httpRequestProcessor::writeTargetResponseOnCaller)
         .subscribe(
             result -> logger.info("Processed request with the following result: {}", result));
 
@@ -58,8 +56,6 @@ public class RelayedRequestPipeline {
                 webSocketConnectionsHandler
                     .acceptConnections()
                     .map(webSocketConnectionsHandler::createLocalConnection)
-                    .subscribe(
-                        connectionsPair ->
-                            webSocketConnectionsRelayerService.startDataRelay(connectionsPair)));
+                    .subscribe(webSocketConnectionsRelayerService::startDataRelay));
   }
 }

@@ -3,17 +3,9 @@ package org.broadinstitute.listener.relay.http;
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.HttpCookie;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.utils.URIBuilder;
 
 /**
  * Represents a response of the local endpoint that is independent of the HTTP client
@@ -81,28 +73,6 @@ public class TargetHttpResponse extends HttpMessage {
     InputStream body = (InputStream) clientHttpResponse.body();
 
     return new TargetHttpResponse(responseHeaders, body, responseStatusCode, "", context);
-  }
-
-  private static String resetPathInCookies(String cookieHeader) {
-    List<HttpCookie> cookies = HttpCookie.parse(cookieHeader);
-
-    cookies.forEach(c -> c.setPath("/"));
-
-    return StringUtils.join(cookies, ";");
-  }
-
-  private static String createRelayToken(RelayedHttpListenerContext context)
-      throws MalformedURLException, URISyntaxException {
-
-    URIBuilder builder = new URIBuilder(context.getListener().getAddress());
-    builder.setScheme("https");
-    URL url = builder.build().toURL();
-    return context
-        .getListener()
-        .getTokenProvider()
-        .getTokenAsync(url.toString(), Duration.ofHours(1))
-        .join()
-        .getToken();
   }
 
   public RelayedHttpListenerContext getContext() {

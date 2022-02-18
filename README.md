@@ -26,7 +26,7 @@ the following configuration settings are required.
 
 `c.NotebookApp.allow_origin = '*'`
 
-*Note*: You could add a specific Azure Relay origin if required.
+*Note*: You could add an specific Azure Relay origin if required.
 
 `c.NotebookApp.base_url = '/<HYBRID CONNECTION NAME>/'`
 

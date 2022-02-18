@@ -67,7 +67,7 @@ public class WebSocketConnectionsRelayerService {
 
     // calling the method again if one of the connections in the
     // pair is still open.
-    // It is to make the call again as it checks if the connection is open before closing it.
+    // It is okay to make the call again as it checks if the connection is open before closing it.
     connectionsPair.close();
     logger.info("Closed connection pair. Tracking ID:{}", connectionsPair.getTrackingId());
   }

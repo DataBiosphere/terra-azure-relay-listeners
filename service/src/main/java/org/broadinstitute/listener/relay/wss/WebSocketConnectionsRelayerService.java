@@ -34,14 +34,15 @@ public class WebSocketConnectionsRelayerService {
       return;
     }
 
-    logger.info("Read {} bytes from the caller. Tracking ID:{}", data.length(), trackingId);
+    if (data != null) {
 
-    connectionsPair.sendTextToLocalWebSocket(data);
+      logger.info("Read {} bytes from the caller. Tracking ID:{}", data.length(), trackingId);
 
-    logger.info(
-        "Sent {} bytes to the target connection. Tracking ID:{} ", data.length(), trackingId);
+      connectionsPair.sendTextToLocalWebSocket(data);
 
-    logger.info("Data read and sent successfully. Tracking ID:{} ", trackingId);
+      logger.info(
+          "Sent {} bytes to the target connection. Tracking ID:{} ", data.length(), trackingId);
+    }
   }
 
   public void relayDataToLocalEndpoint(@NonNull ConnectionsPair connectionsPair) {

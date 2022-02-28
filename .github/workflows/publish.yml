@@ -6,7 +6,7 @@ on:
 
 env:
   SERVICE_NAME: ${{ github.event.repository.name }}
-  ACR_REGISTRY: terradevacrpublic
+  ACR_REGISTRY: terradevacrpublic.azurecr.io
 
 jobs:
   publish-job:
@@ -53,7 +53,7 @@ jobs:
 
       - name: Push Container image
         run: |
-          echo ${{ secrets.ACR_SP_PASSWORD }} | docker login ${ACR_REGISTRY}.azurecr.io \
+          echo ${{ secrets.ACR_SP_PASSWORD }} | docker login ${ACR_REGISTRY} \
           --username ${{ secrets.ACR_SP_USERNAME }} \
           --password-stdin
 

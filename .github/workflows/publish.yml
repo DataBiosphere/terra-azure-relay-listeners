@@ -68,14 +68,14 @@ jobs:
 #          folder: src/docker
 #          dockerfile: ../../dockerfiles/Dockerfile
 
-      - name: Notify slack on failure
-        uses: 8398a7/action-slack@v3
-        if: failure()
-        env:
-          # TODO: Update this to approproiate slack channel
-          SLACK_WEBHOOK_URL: ${{ secrets.POLICY_INT_WEBHOOK_URL }}
-        with:
-          status: ${{ job.status }}
-          author_name: Publish to dev
-          fields: job
-          text: 'Publish failed :sadpanda:'
+#      - name: Notify slack on failure
+#        uses: 8398a7/action-slack@v3
+#        if: failure()
+#        env:
+#          # TODO: Update this to approproiate slack channel
+#          SLACK_WEBHOOK_URL: ${{ secrets.POLICY_INT_WEBHOOK_URL }}
+#        with:
+#          status: ${{ job.status }}
+#          author_name: Publish to dev
+#          fields: job
+#          text: 'Publish failed :sadpanda:'

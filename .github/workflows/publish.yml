@@ -1,7 +1,7 @@
 name: Publish and deploy
 on:
   push:
-#    branches: [ main ]
+    branches: [ main ]
 #  workflow_dispatch:
 
 env:
@@ -58,24 +58,6 @@ jobs:
           --password-stdin
 
           docker push ${{ steps.image-name.outputs.name }}
-
-#          az login --service-principal -u ${{ secrets.ACR_SP_USERNAME}} -p ${{ secrets.ACR_SP_PASSWORD }} \
-#          --tenant ${{ secrets.ACR_TENANT_ID }}
-#
-#          az acr login --name ${ACR_REGISTRY}
-
-#      - name: ACR build
-#        id: acr
-#        uses: azure/acr-build@v1
-#        with:
-#          service_principal: ${{ secrets.ACR_SP_USERNAME }}
-#          service_principal_password: ${{ secrets.ACR_SP_PASSWORD }}
-#          tenant: ${{ secrets.ACR_TENANT_ID }}
-#          registry: ${{ secrets.ACR_REGISTRY }}
-#          repository: relay-listeners
-#          image: image
-#          folder: src/docker
-#          dockerfile: ../../dockerfiles/Dockerfile
 
 #      - name: Notify slack on failure
 #        uses: 8398a7/action-slack@v3

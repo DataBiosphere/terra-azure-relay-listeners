@@ -1,9 +1,8 @@
 name: Publish and deploy
 on:
   push:
-#    push:
-#      branches: [ main ]
-    workflow_dispatch:
+    branches: [ main ]
+#  workflow_dispatch:
 
 env:
   SERVICE_NAME: ${{ github.event.repository.name }}

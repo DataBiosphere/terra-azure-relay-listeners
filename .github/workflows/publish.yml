@@ -1,5 +1,9 @@
 name: Publish and deploy
-on: create
+on:
+  push:
+#    push:
+#      branches: [ main ]
+    workflow_dispatch:
 
 env:
   SERVICE_NAME: ${{ github.event.repository.name }}
@@ -29,14 +33,6 @@ jobs:
         id: tag
         run: echo ::set-output name=tag::$(git describe --tags)
 
-#      - name: Auth to GCR
-#        uses: google-github-actions/setup-gcloud@master
-#        with:
-#          service_account_email: ${{ secrets.GCR_PUBLISH_EMAIL }}
-#          service_account_key: ${{ secrets.GCR_PUBLISH_KEY_B64 }}
-#      - name: Explicitly auth Docker for GCR
-#        run: gcloud auth configure-docker --quiet
-
       - name: Construct docker image name and tag
         id: image-name
         # TODO: update the tag
@@ -55,7 +51,23 @@ jobs:
           image: ${{ steps.image-name.outputs.name }}
 
       - name: Push Container image
-        run: docker push ${{ steps.image-name.outputs.name }}
+        run: |
+          docker login ${{ secrets.ACR_REGISTRY }} --username ${{ secrets.ACR_SP_USERNAME }} \
+          --password ${{ secrets.ACR_SP_PASSWORD }} && docker push ${{ steps.image-name.outputs.name }}
+
+
+#      - name: ACR build
+#        id: acr
+#        uses: azure/acr-build@v1
+#        with:
+#          service_principal: ${{ secrets.ACR_SP_USERNAME }}
+#          service_principal_password: ${{ secrets.ACR_SP_PASSWORD }}
+#          tenant: ${{ secrets.ACR_TENANT_ID }}
+#          registry: ${{ secrets.ACR_REGISTRY }}
+#          repository: relay-listeners
+#          image: image
+#          folder: src/docker
+#          dockerfile: ../../dockerfiles/Dockerfile
 
       - name: Notify slack on failure
         uses: 8398a7/action-slack@v3

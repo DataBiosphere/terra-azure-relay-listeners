@@ -6,6 +6,7 @@ on:
 
 env:
   SERVICE_NAME: ${{ github.event.repository.name }}
+  ACR_REGISTRY: terradevacrpublic
 
 jobs:
   publish-job:
@@ -26,14 +27,17 @@ jobs:
             ~/.gradle/wrapper
           key: v1-${{ runner.os }}-gradle-refs/heads/dev-${{ github.sha }}
 
-      - name: Parse tag
-        id: tag
-        run: echo ::set-output name=tag::$(git describe --tags)
+      - name: Set commit short hash
+        id: setHash
+        run: |
+          git_short_sha=$(git rev-parse --short HEAD)
+          echo $git_short_sha
+          echo "::set-output name=git_short_sha::${git_short_sha}"
 
       - name: Construct docker image name and tag
         id: image-name
         # TODO: update the tag
-        run: echo ::set-output name=name::${{ secrets.ACR_REGISTRY }}/${SERVICE_NAME}:${{ steps.tag.outputs.tag }}
+        run: echo ::set-output name=name::${ACR_REGISTRY}/${SERVICE_NAME}:${{ steps.setHash.outputs.git_short_sha }}
 
       - name: Build image locally with jib
         run: |

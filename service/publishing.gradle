@@ -5,6 +5,5 @@ jib {
 	container {
 		filesModificationTime = ZonedDateTime.now().toString() // to prevent ui caching
 		jvmFlags = []
-//		entrypoint = ["java", "-cp", "/app/resources:/app/classes:/app/libs/*",  "org.broadinstitute.listener.ListenerApplication"]
 	}
 }

@@ -11,6 +11,7 @@ coverage.lcov
 *~
 .DS_Store
 *.sublime-*
+env.txt
 
 HELP.md
 .gradle

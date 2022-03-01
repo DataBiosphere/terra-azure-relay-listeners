@@ -1,7 +1,7 @@
 name: Publish and deploy
 on:
   push:
-    branches: [ main ]
+#    branches: [ main ]
 #  workflow_dispatch:
 
 env:

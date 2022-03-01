@@ -34,8 +34,16 @@ Where HYBRID_CONNECTION_NAME is the configured Hybrid Connection name.
 
 `c.NotebookApp.websocket_url= 'wss://<AZURE_RELAYED_HOST>>/$hc'`
 
-*Note*: For Jupyter Lab you must add the connection name to the URL,
-e.g.: `wss://myrelay.servicebus.windows.net/$hc/myconnection`.
+## Running Jupiter Labs (DSVM)
+
+In DSVM, Jupyter server config file lives in /home/azureuser/.jupyter/jupyter_server_config.py. Modify the same variables similar to Jupyter notebooks
+
+e.g
+```markdown
+c.ServerApp.allow_origin = '*'
+c.ServerApp.base_url = '/qi-2-16/'
+c.ServerApp.websocket_url = 'wss://qi-relay.servicebus.windows.net/$hc/qi-2-16'
+```
 
 
 ## Additional Considerations

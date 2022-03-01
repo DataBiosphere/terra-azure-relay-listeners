@@ -1,13 +1,15 @@
 name: Publish and deploy
-on: create
+on:
+  push:
+#    branches: [ main ]
+#  workflow_dispatch:
 
 env:
   SERVICE_NAME: ${{ github.event.repository.name }}
-  GOOGLE_PROJECT: broad-dsp-gcr-public
+  ACR_REGISTRY: terradevacrpublic.azurecr.io
 
 jobs:
   publish-job:
-    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -25,22 +27,17 @@ jobs:
             ~/.gradle/wrapper
           key: v1-${{ runner.os }}-gradle-refs/heads/dev-${{ github.sha }}
 
-      - name: Parse tag
-        id: tag
-        run: echo ::set-output name=tag::$(git describe --tags)
-
-#      - name: Auth to GCR
-#        uses: google-github-actions/setup-gcloud@master
-#        with:
-#          service_account_email: ${{ secrets.GCR_PUBLISH_EMAIL }}
-#          service_account_key: ${{ secrets.GCR_PUBLISH_KEY_B64 }}
-#      - name: Explicitly auth Docker for GCR
-#        run: gcloud auth configure-docker --quiet
+      - name: Set commit short hash
+        id: setHash
+        run: |
+          git_short_sha=$(git rev-parse --short HEAD)
+          echo $git_short_sha
+          echo "::set-output name=git_short_sha::${git_short_sha}"
 
       - name: Construct docker image name and tag
         id: image-name
         # TODO: update the tag
-        run: echo ::set-output name=name::gcr.io/${GOOGLE_PROJECT}/${SERVICE_NAME}:${{ steps.tag.outputs.tag }}
+        run: echo ::set-output name=name::${ACR_REGISTRY}/${SERVICE_NAME}:${{ steps.setHash.outputs.git_short_sha }}
 
       - name: Build image locally with jib
         run: |
@@ -55,14 +52,18 @@ jobs:
           image: ${{ steps.image-name.outputs.name }}
 
       - name: Push Container image
-        run: docker push ${{ steps.image-name.outputs.name }}
+        run: |
+          echo ${{ secrets.ACR_SP_PASSWORD }} | docker login ${ACR_REGISTRY} \
+          --username ${{ secrets.ACR_SP_USERNAME }} \
+          --password-stdin
+
+          docker push ${{ steps.image-name.outputs.name }}
 
       - name: Notify slack on failure
         uses: 8398a7/action-slack@v3
         if: failure()
         env:
-          # TODO: Update this to approproiate slack channel
-          SLACK_WEBHOOK_URL: ${{ secrets.POLICY_INT_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.LEO_WEB_HOOK_URL }}
         with:
           status: ${{ job.status }}
           author_name: Publish to dev

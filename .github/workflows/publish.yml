@@ -59,14 +59,13 @@ jobs:
 
           docker push ${{ steps.image-name.outputs.name }}
 
-#      - name: Notify slack on failure
-#        uses: 8398a7/action-slack@v3
-#        if: failure()
-#        env:
-#          # TODO: Update this to approproiate slack channel
-#          SLACK_WEBHOOK_URL: ${{ secrets.POLICY_INT_WEBHOOK_URL }}
-#        with:
-#          status: ${{ job.status }}
-#          author_name: Publish to dev
-#          fields: job
-#          text: 'Publish failed :sadpanda:'
+      - name: Notify slack on failure
+        uses: 8398a7/action-slack@v3
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.LEO_WEB_HOOK_URL }}
+        with:
+          status: ${{ job.status }}
+          author_name: Publish to dev
+          fields: job
+          text: 'Publish failed :sadpanda:'

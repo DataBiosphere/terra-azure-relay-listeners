@@ -9,6 +9,7 @@ import java.net.http.WebSocket;
 import java.util.HashMap;
 import java.util.Map;
 import org.broadinstitute.listener.relay.http.RelayedHttpRequest;
+import org.broadinstitute.listener.relay.inspectors.InspectorsProcessor;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,11 +25,15 @@ public class WebSocketConnectionsHandler {
   private final Logger logger = LoggerFactory.getLogger(WebSocketConnectionsHandler.class);
   private final TargetResolver targetResolver;
   private final Map<String, RelayedHttpRequest> acceptedRequests;
+  private final InspectorsProcessor inspectorsProcessor;
 
   public WebSocketConnectionsHandler(
-      @NonNull HybridConnectionListener listener, @NonNull TargetResolver targetResolver) {
+      @NonNull HybridConnectionListener listener,
+      @NonNull TargetResolver targetResolver,
+      @NonNull InspectorsProcessor inspectorsProcessor) {
     this.listener = listener;
     this.targetResolver = targetResolver;
+    this.inspectorsProcessor = inspectorsProcessor;
     acceptedRequests = new HashMap<>();
   }
 
@@ -55,6 +60,15 @@ public class WebSocketConnectionsHandler {
             listener.setAcceptHandler(
                 context -> {
                   try {
+
+                    if (!inspectorsProcessor.isRelayedWebSocketUpgradeRequestAccepted(
+                        context.getRequest())) {
+                      logger.info(
+                          "The WebSocket upgrade was rejected by an inspector. Tracking ID:{}",
+                          context.getTrackingContext().getTrackingId());
+                      return false;
+                    }
+
                     RelayedHttpRequest request =
                         addAcceptedRelayedRequest(
                             context.getTrackingContext().getTrackingId(),
@@ -62,7 +76,6 @@ public class WebSocketConnectionsHandler {
                     sink.next(request);
                   } catch (Exception e) {
                     logger.error("Failed to create a relayed http request", e);
-                    sink.error(e);
                     return false;
                   }
 
@@ -84,8 +97,6 @@ public class WebSocketConnectionsHandler {
                   return;
                 }
 
-                // remove request from the list
-                removeAcceptedRelayedRequest(connection.getTrackingContext().getTrackingId());
                 sink.error(
                     new IllegalStateException(
                         "Invalid connection state. The connection was not Open"));

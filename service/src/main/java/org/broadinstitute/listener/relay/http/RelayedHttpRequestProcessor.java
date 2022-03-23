@@ -70,7 +70,7 @@ public class RelayedHttpRequestProcessor {
     String msg =
         String.format(
             Locale.ROOT,
-            "The listener rejected the requests. Tracking ID:%s",
+            "The listener rejected the request. Tracking ID:%s",
             context.getTrackingContext().getTrackingId());
     listenerResponse.setStatusCode(403);
     listenerResponse.setStatusDescription(msg);

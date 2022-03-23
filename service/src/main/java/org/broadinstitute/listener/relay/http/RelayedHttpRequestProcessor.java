@@ -9,31 +9,37 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Locale;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
+import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
-import org.springframework.stereotype.Component;
 
-@Component
 public class RelayedHttpRequestProcessor {
 
   private final HttpClient httpClient;
+  private final TargetResolver targetHostResolver;
   protected final Logger logger = LoggerFactory.getLogger(RelayedHttpRequestProcessor.class);
 
-  public RelayedHttpRequestProcessor(HttpClient httpClient) {
+  public RelayedHttpRequestProcessor(@NonNull TargetResolver targetHostResolver) {
+    this.httpClient = HttpClient.newBuilder().build();
+    this.targetHostResolver = targetHostResolver;
+  }
+
+  public RelayedHttpRequestProcessor(
+      HttpClient httpClient, @NonNull TargetResolver targetHostResolver) {
     this.httpClient = httpClient;
+    this.targetHostResolver = targetHostResolver;
   }
 
-  public RelayedHttpRequestProcessor() {
-    this(HttpClient.newBuilder().build());
-  }
-
-  public TargetHttpResponse executeRequestOnTarget(RelayedHttpRequest request) {
+  public TargetHttpResponse executeRequestOnTarget(RelayedHttpListenerContext requestContext) {
 
     HttpResponse<?> clientResponse = null;
     try {
+      RelayedHttpRequest request =
+          RelayedHttpRequest.createRelayedHttpRequest(requestContext, targetHostResolver);
 
       HttpRequest localRequest = toClientHttpRequest(request);
 
@@ -50,11 +56,39 @@ public class RelayedHttpRequestProcessor {
           logger.error("Failed to close body from response.", ex);
         }
       }
-      return handleExceptionResponse(ex, request.getContext());
+      return handleExceptionResponse(ex, requestContext);
     }
   }
 
+  public Result writeNotAcceptedResponseOnCaller(RelayedHttpListenerContext context) {
+    if (context.getResponse() == null) {
+      logger.error("The context did not have a valid response");
+      return Result.FAILURE;
+    }
+
+    RelayedHttpListenerResponse listenerResponse = context.getResponse();
+    String msg =
+        String.format(
+            Locale.ROOT,
+            "The listener rejected the requests. Tracking ID:%s",
+            context.getTrackingContext().getTrackingId());
+    listenerResponse.setStatusCode(403);
+    listenerResponse.setStatusDescription(msg);
+    try {
+      listenerResponse.getOutputStream().close();
+    } catch (IOException e) {
+      logger.error("Failed to close response body to the remote client.", e);
+    }
+    return Result.FAILURE;
+  }
+
   public Result writeTargetResponseOnCaller(@NonNull TargetHttpResponse targetResponse) {
+
+    if (targetResponse.getContext().getResponse() == null) {
+      logger.error("The context did not have a valid response");
+      return Result.FAILURE;
+    }
+
     RelayedHttpListenerResponse listenerResponse = targetResponse.getContext().getResponse();
 
     listenerResponse.setStatusCode(targetResponse.getStatusCode());
@@ -88,7 +122,12 @@ public class RelayedHttpRequestProcessor {
 
   private TargetHttpResponse handleExceptionResponse(
       Exception exception, RelayedHttpListenerContext context) {
-    logger.error("Relay request failed.", exception);
+    String message =
+        String.format(
+            Locale.ROOT,
+            "Relayed request failed. Tracking ID:%s",
+            context.getTrackingContext().getTrackingId());
+    logger.error(message, exception);
     return TargetHttpResponse.createTargetHttpResponseFromException(500, exception, context);
   }
 

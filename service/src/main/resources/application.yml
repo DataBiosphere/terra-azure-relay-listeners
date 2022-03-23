@@ -9,3 +9,6 @@ listener:
   relayConnectionName:
   targetProperties:
     targetHost:
+  requestInspectors:
+#    - headersLogger
+

@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import com.microsoft.azure.relay.HybridConnectionListener;
 import org.broadinstitute.listener.config.ListenerProperties;
 import org.broadinstitute.listener.config.TargetProperties;
+import org.broadinstitute.listener.relay.inspectors.InspectorsProcessor;
 import org.broadinstitute.listener.relay.transport.DefaultTargetResolver;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +21,7 @@ class ListenerConnectionHandlerTest {
   private static final String TARGET_HOST = "http://localhost:8080/";
   private TargetResolver targetResolver;
   @Mock private HybridConnectionListener listener;
+  @Mock private InspectorsProcessor inspectorsProcessor;
 
   private ListenerConnectionHandler listenerConnectionHandler;
 
@@ -33,7 +35,8 @@ class ListenerConnectionHandlerTest {
 
   @Test
   void receiveRelayedHttpRequests_handlerIsSet() {
-    listenerConnectionHandler = new ListenerConnectionHandler(listener, targetResolver);
+    listenerConnectionHandler =
+        new ListenerConnectionHandler(listener, targetResolver, inspectorsProcessor);
 
     listenerConnectionHandler.receiveRelayedHttpRequests().subscribe();
 
@@ -42,7 +45,8 @@ class ListenerConnectionHandlerTest {
 
   @Test
   void openConnection_listenerConnectionOpens() {
-    listenerConnectionHandler = new ListenerConnectionHandler(listener, targetResolver);
+    listenerConnectionHandler =
+        new ListenerConnectionHandler(listener, targetResolver, inspectorsProcessor);
 
     listenerConnectionHandler.openConnection().subscribe();
 
@@ -51,7 +55,8 @@ class ListenerConnectionHandlerTest {
 
   @Test
   void closeConnection_listenerConnectionCloses() {
-    listenerConnectionHandler = new ListenerConnectionHandler(listener, targetResolver);
+    listenerConnectionHandler =
+        new ListenerConnectionHandler(listener, targetResolver, inspectorsProcessor);
 
     listenerConnectionHandler.closeConnection().subscribe();
 

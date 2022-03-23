@@ -1,5 +1,6 @@
 package org.broadinstitute.listener.relay.transport;
 
+import com.microsoft.azure.relay.RelayedHttpListenerContext;
 import org.broadinstitute.listener.relay.http.ListenerConnectionHandler;
 import org.broadinstitute.listener.relay.http.RelayedHttpRequestProcessor;
 import org.broadinstitute.listener.relay.wss.WebSocketConnectionsHandler;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class RelayedRequestPipeline {
 
-  private final ListenerConnectionHandler httpRequestReceiver;
+  private final ListenerConnectionHandler listenerConnectionHandler;
   private final RelayedHttpRequestProcessor httpRequestProcessor;
   private final WebSocketConnectionsHandler webSocketConnectionsHandler;
   private final WebSocketConnectionsRelayerService webSocketConnectionsRelayerService;
@@ -20,14 +21,14 @@ public class RelayedRequestPipeline {
   private final Logger logger = LoggerFactory.getLogger(RelayedRequestPipeline.class);
 
   public RelayedRequestPipeline(
-      @NonNull ListenerConnectionHandler requestReceiver,
-      @NonNull RelayedHttpRequestProcessor requestExecutor,
-      @NonNull WebSocketConnectionsHandler wsReader,
+      @NonNull ListenerConnectionHandler listenerConnectionHandler,
+      @NonNull RelayedHttpRequestProcessor relayedHttpRequestProcessor,
+      @NonNull WebSocketConnectionsHandler webSocketConnectionsHandler,
       @NonNull WebSocketConnectionsRelayerService webSocketConnectionsRelayerService) {
-    this.httpRequestReceiver = requestReceiver;
-    this.httpRequestProcessor = requestExecutor;
+    this.listenerConnectionHandler = listenerConnectionHandler;
+    this.httpRequestProcessor = relayedHttpRequestProcessor;
 
-    this.webSocketConnectionsHandler = wsReader;
+    this.webSocketConnectionsHandler = webSocketConnectionsHandler;
     this.webSocketConnectionsRelayerService = webSocketConnectionsRelayerService;
   }
 
@@ -35,12 +36,7 @@ public class RelayedRequestPipeline {
     logger.info("Starting Relay Listener Processor");
 
     logger.info("Registering HTTP pipeline");
-    httpRequestReceiver
-        .receiveRelayedHttpRequests()
-        .map(httpRequestProcessor::executeRequestOnTarget)
-        .map(httpRequestProcessor::writeTargetResponseOnCaller)
-        .subscribe(
-            result -> logger.info("Processed request with the following result: {}", result));
+    registerHttpExecutionPipeline();
 
     logger.info("Registering WebSocket upgrades pipeline");
     webSocketConnectionsHandler
@@ -48,7 +44,7 @@ public class RelayedRequestPipeline {
         .subscribe(
             request -> logger.info("Accepted request. Target URI:{}", request.getTargetUrl()));
 
-    httpRequestReceiver
+    listenerConnectionHandler
         .openConnection()
         .subscribe(
             result ->
@@ -57,5 +53,19 @@ public class RelayedRequestPipeline {
                     .acceptConnections()
                     .map(webSocketConnectionsHandler::createLocalConnection)
                     .subscribe(webSocketConnectionsRelayerService::startDataRelay));
+  }
+
+  public void registerHttpExecutionPipeline() {
+    listenerConnectionHandler
+        .receiveRelayedHttpRequests()
+        .filter(
+            c -> listenerConnectionHandler.isRelayedHttpRequestAcceptedByInspectors(c.getRequest()))
+        .doOnDiscard(
+            RelayedHttpListenerContext.class,
+            httpRequestProcessor::writeNotAcceptedResponseOnCaller)
+        .map(httpRequestProcessor::executeRequestOnTarget)
+        .map(httpRequestProcessor::writeTargetResponseOnCaller)
+        .subscribe(
+            result -> logger.info("Processed request with the following result: {}", result));
   }
 }

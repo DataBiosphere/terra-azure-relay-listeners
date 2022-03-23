@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
 import com.microsoft.azure.relay.RelayedHttpListenerRequest;
 import com.microsoft.azure.relay.RelayedHttpListenerResponse;
+import com.microsoft.azure.relay.TrackingContext;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -57,6 +58,7 @@ class RelayedHttpRequestProcessorTest {
   @Mock private OutputStream responseStream;
   @Mock private TargetHttpResponse targetHttpResponse;
   @Mock private TargetResolver targetHostResolver;
+  @Mock private TrackingContext trackingContext;
   @Captor private ArgumentCaptor<byte[]> responseData;
 
   private Map<String, List<String>> targetResponseHeaders;
@@ -95,6 +97,8 @@ class RelayedHttpRequestProcessorTest {
       throws IOException, InterruptedException, URISyntaxException, InvalidRelayTargetException {
     setUpRelayedHttpRequestMock();
     when(httpClient.send(any(), any())).thenThrow(new InterruptedException("Error Msg"));
+    when(context.getTrackingContext()).thenReturn(trackingContext);
+    when(trackingContext.getTrackingId()).thenReturn("ID_1");
     TargetHttpResponse response = processor.executeRequestOnTarget(context);
 
     assertThat(response.getStatusCode(), equalTo(500));

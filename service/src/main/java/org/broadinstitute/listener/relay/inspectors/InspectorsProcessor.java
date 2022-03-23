@@ -51,9 +51,18 @@ public class InspectorsProcessor {
       Function<RelayedHttpListenerRequest, Set<Boolean>> distinctSet,
       RelayedHttpListenerRequest listenerRequest) {
     Set<Boolean> distinctResults = distinctSet.apply(listenerRequest);
-    boolean result = false;
-    if (distinctResults.size() == 1) {
-      result = distinctResults.iterator().next();
+    boolean result;
+    int size = distinctResults.size();
+    switch (size) {
+      case 0:
+        result = true;
+        break;
+      case 1:
+        result = distinctResults.iterator().next();
+        break;
+      default:
+        result = false;
+        break;
     }
 
     logger.info(

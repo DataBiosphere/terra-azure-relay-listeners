@@ -19,6 +19,8 @@ The Terra Azure Relay Listener establishes a bi-directional channel with Azure R
 
 `targetProperties.targetHost:` The local or private endpoint where the listener must forward all requests.
 
+`requestInspectors:` A list of request inspectors to be enabled.
+
 ## Running Jupyter Notebooks
 
 To enable access to a Jupyter Notebooks server instance via Azure Relay using the listener,
@@ -44,7 +46,37 @@ c.ServerApp.allow_origin = '*'
 c.ServerApp.base_url = '/qi-2-16/'
 c.ServerApp.websocket_url = 'wss://qi-relay.servicebus.windows.net/$hc/qi-2-16'
 ```
+## Request Inspectors
 
+
+The listener enables the inspection of the relayed HTTP requests.
+HTTP requests could be accepted or rejected after being inspected.
+
+An inspector is an implementation of the following interface:
+```java
+public interface RequestInspector {
+
+  public boolean inspectWebSocketUpgradeRequest(
+      RelayedHttpListenerRequest relayedHttpListenerRequest);
+
+  public boolean inspectRelayedHttpRequest(RelayedHttpListenerRequest relayedHttpListenerRequest);
+}
+```
+
+The implementation must be a named component, e.g.:
+
+```java
+@Component(InspectorNameConstants.HEADERS_LOGGER)
+public class HeaderLoggerInspector implements RequestInspector {...}
+```
+
+For a new inspector, an entry must be added to:
+
+```java
+public enum InspectorType
+```
+
+An inspector can be enabled by adding its name to the `requestInspectors` list in the configuration file.
 
 ## Additional Considerations
 

@@ -6,9 +6,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.microsoft.azure.relay.RelayedHttpListenerRequest;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -20,6 +22,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class InspectorsProcessorTest {
 
   private InspectorsProcessor inspectorsProcessor;
+  private InspectorsProcessor inspectorsProcessorNoInspectors;
+
   @Mock private RelayedHttpListenerRequest listenerRequest;
   @Mock private RequestInspector inspector1;
   @Mock private RequestInspector inspector2;
@@ -27,6 +31,7 @@ class InspectorsProcessorTest {
   @BeforeEach
   void setUp() {
     inspectorsProcessor = new InspectorsProcessor(List.of(inspector1, inspector2));
+    inspectorsProcessorNoInspectors = new InspectorsProcessor(new ArrayList<>());
   }
 
   @ParameterizedTest
@@ -59,5 +64,22 @@ class InspectorsProcessorTest {
     boolean result = inspectorsProcessor.isRelayedHttpRequestAccepted(listenerRequest);
 
     assertThat(result, equalTo(expectedResult));
+  }
+
+  @Test
+  void isRelayedHttpRequestAccepted_noInspectors() {
+
+    boolean result = inspectorsProcessorNoInspectors.isRelayedHttpRequestAccepted(listenerRequest);
+
+    assertThat(result, equalTo(true));
+  }
+
+  @Test
+  void isRelayedWebSocketUpgradeRequestAccepted_noInspectors() {
+
+    boolean result =
+        inspectorsProcessorNoInspectors.isRelayedWebSocketUpgradeRequestAccepted(listenerRequest);
+
+    assertThat(result, equalTo(true));
   }
 }

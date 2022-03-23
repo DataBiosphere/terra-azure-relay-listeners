@@ -1,14 +1,17 @@
 package org.broadinstitute.listener.relay.transport;
 
+import com.microsoft.azure.relay.HybridConnectionChannel;
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
 import org.broadinstitute.listener.relay.http.ListenerConnectionHandler;
 import org.broadinstitute.listener.relay.http.RelayedHttpRequestProcessor;
+import org.broadinstitute.listener.relay.wss.ConnectionsPair;
 import org.broadinstitute.listener.relay.wss.WebSocketConnectionsHandler;
 import org.broadinstitute.listener.relay.wss.WebSocketConnectionsRelayerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.SynchronousSink;
 
 @Component
 public class RelayedRequestPipeline {
@@ -44,6 +47,10 @@ public class RelayedRequestPipeline {
         .subscribe(
             request -> logger.info("Accepted request. Target URI:{}", request.getTargetUrl()));
 
+    openListenerConnection();
+  }
+
+  public void openListenerConnection() {
     listenerConnectionHandler
         .openConnection()
         .subscribe(
@@ -51,7 +58,18 @@ public class RelayedRequestPipeline {
                 // we can't start accepting connections until the connection is open
                 webSocketConnectionsHandler
                     .acceptConnections()
-                    .map(webSocketConnectionsHandler::createLocalConnection)
+                    .handle(
+                        (HybridConnectionChannel connectionChannel,
+                            SynchronousSink<ConnectionsPair> sink) -> {
+                          try {
+                            ConnectionsPair connectionsPair =
+                                webSocketConnectionsHandler.createLocalConnection(
+                                    connectionChannel);
+                            sink.next(connectionsPair);
+                          } catch (Exception ex) {
+                            logger.error("Error while creating the local connection", ex);
+                          }
+                        })
                     .subscribe(webSocketConnectionsRelayerService::startDataRelay));
   }
 

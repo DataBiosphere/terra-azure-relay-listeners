@@ -51,6 +51,8 @@ c.ServerApp.websocket_url = 'wss://qi-relay.servicebus.windows.net/$hc/qi-2-16'
 
 The listener enables the inspection of the relayed HTTP requests.
 HTTP requests could be accepted or rejected after being inspected.
+All enabled request inspectors will be executed for each request.
+If at least one returns `false` the request will be rejected.
 
 An inspector is an implementation of the following interface:
 ```java
@@ -63,7 +65,20 @@ public interface RequestInspector {
 }
 ```
 
-The implementation must be a named component, e.g.:
+- `inspectRelayedHttpRequest` is called before the relayed HTTP request is forwarded to the target.
+  If the implementation returns `false` the client will receive a `403` response.
+
+
+- `inspectWebSocketUpgradeRequest` is called before the listener accepts the relayed WebSocket connection.
+  If the implementation returns `false`, the listener will deny the WebSocket upgrade request.
+  Azure Relay expects a response in less than 30 seconds; if an inspector blocks the requests for longer than that, the client will receive a timeout.
+
+
+
+
+
+
+ - The implementation must be a named component, e.g.:
 
 ```java
 @Component(InspectorNameConstants.HEADERS_LOGGER)

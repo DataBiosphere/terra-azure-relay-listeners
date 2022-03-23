@@ -59,11 +59,4 @@ public class AppConfiguration {
 
     return new InspectorsProcessor(inspectors);
   }
-
-  //  @Bean
-  //  public List<RequestInspector> inspectors(InspectorFactory inspectorsFactory) {
-  //    var inspector = inspectorsFactory.getInspector(InspectorNameConstants.HEADERS_LOGGER);
-  //
-  //    return List.of(inspector);
-  //  }
 }

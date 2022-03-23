@@ -5,11 +5,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.microsoft.azure.relay.HybridConnectionChannel;
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
 import org.broadinstitute.listener.relay.http.ListenerConnectionHandler;
 import org.broadinstitute.listener.relay.http.RelayedHttpRequestProcessor;
 import org.broadinstitute.listener.relay.http.RelayedHttpRequestProcessor.Result;
 import org.broadinstitute.listener.relay.http.TargetHttpResponse;
+import org.broadinstitute.listener.relay.wss.ConnectionsPair;
 import org.broadinstitute.listener.relay.wss.WebSocketConnectionsHandler;
 import org.broadinstitute.listener.relay.wss.WebSocketConnectionsRelayerService;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @ExtendWith(MockitoExtension.class)
 class RelayedRequestPipelineTest {
@@ -28,6 +31,8 @@ class RelayedRequestPipelineTest {
   @Mock private RelayedHttpRequestProcessor relayedHttpRequestProcessor;
   @Mock private WebSocketConnectionsHandler webSocketConnectionsHandler;
   @Mock private WebSocketConnectionsRelayerService webSocketConnectionsRelayerService;
+  @Mock private HybridConnectionChannel hybridConnectionChannel;
+  @Mock private ConnectionsPair connectionsPair;
 
   private RelayedRequestPipeline relayedRequestPipeline;
 
@@ -71,5 +76,22 @@ class RelayedRequestPipelineTest {
     verify(relayedHttpRequestProcessor, times(0)).executeRequestOnTarget(any());
     verify(relayedHttpRequestProcessor, times(0)).writeTargetResponseOnCaller(any());
     verify(relayedHttpRequestProcessor, times(1)).writeNotAcceptedResponseOnCaller(requestContext);
+  }
+
+  @Test
+  void openListenerConnection_continuesAfterException() {
+    when(webSocketConnectionsHandler.acceptConnections())
+        .thenReturn(
+            Flux.just(hybridConnectionChannel, hybridConnectionChannel, hybridConnectionChannel));
+
+    when(webSocketConnectionsHandler.createLocalConnection(hybridConnectionChannel))
+        .thenReturn(connectionsPair)
+        .thenThrow(NullPointerException.class)
+        .thenReturn(connectionsPair);
+
+    when(listenerConnectionHandler.openConnection()).thenReturn(Mono.just("open"));
+    relayedRequestPipeline.openListenerConnection();
+
+    verify(webSocketConnectionsRelayerService, times(2)).startDataRelay(connectionsPair);
   }
 }

@@ -1,6 +1,7 @@
 package org.broadinstitute.listener.relay.inspectors;
 
 import com.microsoft.azure.relay.RelayedHttpListenerRequest;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.commons.lang3.StringUtils;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 public class HeaderLoggerInspector implements RequestInspector {
 
   private final Logger logger = LoggerFactory.getLogger(HeaderLoggerInspector.class);
+  private static final List<String> MUST_MASKED_HEADER_NAMES = List.of("Authorization", "Cookie");
 
   @Override
   public boolean inspectWebSocketUpgradeRequest(
@@ -45,10 +47,20 @@ public class HeaderLoggerInspector implements RequestInspector {
 
     for (Entry<String, String> header : headers.entrySet()) {
       String value = header.getValue();
-      if (StringUtils.containsIgnoreCase(header.getKey(), "Auhtorization")) {
+      if (isMaskedValue(header.getKey())) {
         value = "*******";
       }
       logger.info("Header: {} Value:{}", header.getKey(), value);
     }
+  }
+
+  private boolean isMaskedValue(String key) {
+    for (String maskedHeader : MUST_MASKED_HEADER_NAMES) {
+      if (StringUtils.containsIgnoreCase(key, maskedHeader)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }

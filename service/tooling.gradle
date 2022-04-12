@@ -5,12 +5,12 @@ if (hasProperty('buildScan')) {
 	}
 }
 
-spotless {
-	java {
-		googleJavaFormat()
-		target 'src/*/java/**/*.java'
-	}
-}
+//spotless {
+//	java {
+//		googleJavaFormat()
+//		target 'src/*/java/**/*.java'
+//	}
+//}
 
 compileJava.dependsOn spotlessApply
 

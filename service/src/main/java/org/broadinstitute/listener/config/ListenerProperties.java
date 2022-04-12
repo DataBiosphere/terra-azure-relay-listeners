@@ -9,6 +9,8 @@ public class ListenerProperties {
 
   private String relayConnectionString;
   private String relayConnectionName;
+  private String samUrl;
+  private String samResourceId;
   private TargetProperties targetProperties;
   private List<InspectorType> requestInspectors;
 
@@ -18,6 +20,22 @@ public class ListenerProperties {
 
   public void setRelayConnectionString(String relayConnectionString) {
     this.relayConnectionString = relayConnectionString;
+  }
+
+  public String getSamUrl() {
+    return samUrl;
+  }
+
+  public void setSamUrl(String samUrl) {
+    this.samUrl = samUrl;
+  }
+
+  public String getSamResourceId() {
+    return samResourceId;
+  }
+
+  public void setSamResourceId(String samResourceId) {
+    this.samResourceId = samResourceId;
   }
 
   public String getRelayConnectionName() {

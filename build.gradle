@@ -24,4 +24,4 @@ subprojects {
 	}
 }
 
-idea.project.jdkName = '11'
+idea.project.jdkName = '17'

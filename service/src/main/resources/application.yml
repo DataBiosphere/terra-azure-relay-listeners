@@ -9,6 +9,9 @@ listener:
   relayConnectionName:
   targetProperties:
     targetHost:
+  samUrl:
+  samResourceId:
   requestInspectors:
 #    - headersLogger
+    - samChecker
 

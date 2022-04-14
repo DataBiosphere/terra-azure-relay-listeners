@@ -23,5 +23,6 @@ class TokenCheckerTest {
   void checkWritePermission() throws IOException, InterruptedException {
     var res = tokenChecker.getOauthInfo("");
     assertThat(res.error, equalTo("invalid_token"));
+    assertThat(res.expires_in, equalTo(0));
   }
 }

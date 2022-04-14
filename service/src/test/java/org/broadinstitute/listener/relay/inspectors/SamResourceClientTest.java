@@ -22,14 +22,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class SamResourceClientTest {
 
   private SamResourceClient samResourceClient;
-  private HashMap<String, Instant> tokenCache = new HashMap<String, Instant>();
 
   @Mock private TokenChecker tokenChecker;
   @Mock private ApiClient apiClient;
 
   @BeforeEach
   void setUp() throws IOException, InterruptedException, ApiException {
-    samResourceClient = new SamResourceClient("resourceId", apiClient, tokenChecker, tokenCache);
+    samResourceClient = new SamResourceClient("resourceId", apiClient, tokenChecker);
   }
 
   @Test
@@ -41,54 +40,20 @@ class SamResourceClientTest {
     when(apiClient.execute(any(), any())).thenReturn(apiResponse);
     when(apiClient.escapeString(any())).thenReturn("string");
 
-    var res = samResourceClient.checkWritePermission("accessToken");
+    var firstExpiresAt = samResourceClient.checkWritePermission("accessToken");
+    var expectedExpiresAtUpperBound = Instant.now().plusSeconds(oauthResponse.expires_in);
 
-    assertThat(res, equalTo(true));
-    var expectedExpiresAt = Instant.now().plusSeconds(100);
-    assertThat(tokenCache.get("accessToken").isBefore(expectedExpiresAt), equalTo(true));
+    assertThat(firstExpiresAt.isBefore(expectedExpiresAtUpperBound), equalTo(true));
   }
 
   @Test
-  void checkWritePermission_token_expired() throws IOException, InterruptedException, ApiException {
+  void checkWritePermission_token_expired() throws IOException, InterruptedException {
     var oauthResponse = new OauthInfoResponse();
     oauthResponse.expires_in = -1;
     when(tokenChecker.getOauthInfo(any())).thenReturn(oauthResponse);
 
     var res = samResourceClient.checkWritePermission("accessToken");
 
-    assertThat(res, equalTo(false));
-    assertThat(tokenCache.containsKey("accessToken"), equalTo(false));
-  }
-
-  @Test
-  void checkCachedPermission_success() {
-    var tokenCache = new HashMap<String, Instant>();
-    tokenCache.put("accessToken", Instant.now().plusSeconds(100));
-    var samResourceClient = new SamResourceClient("resourceId", apiClient, tokenChecker, tokenCache);
-
-    var res = samResourceClient.checkCachedPermission("accessToken");
-
-    assertThat(res, equalTo(true));
-  }
-
-  @Test
-  void checkCachedPermission_token_expired() {
-    var tokenCache = new HashMap<String, Instant>();
-    tokenCache.put("accessToken", Instant.now().minusSeconds(100));
-    var samResourceClient = new SamResourceClient("resourceId", apiClient, tokenChecker, tokenCache);
-
-    var res = samResourceClient.checkCachedPermission("accessToken");
-
-    assertThat(res, equalTo(false));
-  }
-
-  @Test
-  void checkCachedPermission_token_not_in_cache() throws IOException, InterruptedException {
-    var oauthResponse = new OauthInfoResponse();
-    oauthResponse.expires_in = -1;
-    when(tokenChecker.getOauthInfo(any())).thenReturn(oauthResponse);
-    var res = samResourceClient.checkCachedPermission("accessToken1");
-
-    assertThat(res, equalTo(false));
+    assertThat(res, equalTo(Instant.EPOCH));
   }
 }

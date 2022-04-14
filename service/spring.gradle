@@ -6,13 +6,16 @@ dependencies {
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+	implementation "org.springframework.boot:spring-boot-starter-cache:2.5.0"
+	implementation "com.github.ben-manes.caffeine:caffeine:3.0.2"
 }
 
 test { useJUnitPlatform() }
 
 task bootRunDev {
-	bootRun.configure { systemProperty 'spring.profiles.active', 'human-readable-logging' }
+	bootRun.configure {
+		systemProperty 'spring.profiles.active',
+						'human-readable-logging'
+	}
 	finalizedBy(bootRun)
 }
-
-

@@ -5,6 +5,7 @@ if (hasProperty('buildScan')) {
 	}
 }
 
+// TODO: re-enable this
 //spotless {
 //	java {
 //		googleJavaFormat()

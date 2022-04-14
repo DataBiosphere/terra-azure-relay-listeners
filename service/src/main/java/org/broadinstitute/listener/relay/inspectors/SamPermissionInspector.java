@@ -1,6 +1,7 @@
 package org.broadinstitute.listener.relay.inspectors;
 
 import com.microsoft.azure.relay.RelayedHttpListenerRequest;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
@@ -48,8 +49,13 @@ public class SamPermissionInspector implements RequestInspector {
       return false;
     } else {
       var token = leoToken.get();
-      return samResourceClient.checkCachedPermission(token);
+      return checkCachedPermission(token);
     }
+  }
+
+  public boolean checkCachedPermission(String accessToken) {
+    var expiresAt = samResourceClient.checkWritePermission(accessToken);
+    return expiresAt.isAfter(Instant.now());
   }
 
   protected Optional<String> getToken(@NotNull String cookieValue) {

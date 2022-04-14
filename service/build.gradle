@@ -28,6 +28,7 @@ apply from: 'tooling.gradle'
 apply from: 'analysis.gradle'
 
 dependencies {
+	implementation 'org.jetbrains:annotations:20.1.0'
 	annotationProcessor 'org.immutables:value:2.8.8'
 	implementation('bio.terra:terra-common-lib:0.0.53-SNAPSHOT') {
 		// remove transitive database deps

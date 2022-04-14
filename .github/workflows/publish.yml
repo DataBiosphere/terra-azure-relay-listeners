@@ -27,6 +27,9 @@ jobs:
             ~/.gradle/wrapper
           key: v1-${{ runner.os }}-gradle-refs/heads/dev-${{ github.sha }}
 
+      - name: Gradle build service
+        run: ./gradlew --build-cache :service:build -x test
+
       - name: Set commit short hash
         id: setHash
         run: |

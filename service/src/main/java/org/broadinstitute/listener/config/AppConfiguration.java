@@ -5,12 +5,17 @@ import com.microsoft.azure.relay.RelayConnectionStringBuilder;
 import com.microsoft.azure.relay.TokenProvider;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import org.broadinstitute.dsde.workbench.client.sam.ApiClient;
 import org.broadinstitute.listener.relay.http.RelayedHttpRequestProcessor;
 import org.broadinstitute.listener.relay.inspectors.InspectorLocator;
 import org.broadinstitute.listener.relay.inspectors.InspectorsProcessor;
 import org.broadinstitute.listener.relay.inspectors.RequestInspector;
+import org.broadinstitute.listener.relay.inspectors.SamResourceClient;
+import org.broadinstitute.listener.relay.inspectors.TokenChecker;
 import org.broadinstitute.listener.relay.transport.DefaultTargetResolver;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +33,17 @@ public class AppConfiguration {
   public TargetResolver targetResolver() {
     // return a simple resolver that uses the configuration value.
     return new DefaultTargetResolver(properties);
+  }
+
+  @Bean
+  public SamResourceClient samResourceClient() {
+    ApiClient samClient = new ApiClient();
+    samClient.setBasePath(properties.getSamInspectorProperties().getSamUrl());
+    // return a simple resolver that uses the configuration value.
+    return new SamResourceClient(properties.getSamInspectorProperties().getSamResourceId(),
+        samClient,
+        new TokenChecker(),
+        new HashMap<String, Instant>());
   }
 
   @Bean

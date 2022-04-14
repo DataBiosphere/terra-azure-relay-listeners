@@ -3,24 +3,22 @@ package org.broadinstitute.listener.relay.inspectors;
 import com.microsoft.azure.relay.RelayedHttpListenerRequest;
 import java.util.Arrays;
 import java.util.Map;
-import org.broadinstitute.dsde.workbench.client.sam.ApiClient;
-import org.broadinstitute.dsde.workbench.client.sam.ApiException;
-import org.broadinstitute.dsde.workbench.client.sam.api.ResourcesApi;
-import org.broadinstitute.listener.config.ListenerProperties;
+import java.util.Optional;
 import org.broadinstitute.listener.relay.inspectors.InspectorType.InspectorNameConstants;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
 @Component(InspectorNameConstants.SAM_CHECKER)
 public class SamPermissionInspector implements RequestInspector {
   private final Logger logger = LoggerFactory.getLogger(SamPermissionInspector.class);
-  private final String SAM_RESOURCE_TYPE = "controlled-application-private-workspace-resource";
-  private final ApiClient samClient = new ApiClient();
+  private final SamResourceClient samResourceClient;
 
-  @Autowired private ListenerProperties listenerProperties;
+  public SamPermissionInspector(SamResourceClient samResourceClient) {
+    this.samResourceClient = samResourceClient;
+  }
 
   @Override
   public boolean inspectWebSocketUpgradeRequest(
@@ -37,32 +35,32 @@ public class SamPermissionInspector implements RequestInspector {
   private boolean checkPermission(Map<String, String> headers) {
 
     if (headers == null) {
-      logger.info("No auth headers found");
+      logger.error("No auth headers found");
       return false;
     }
 
     var cookieValue = headers.getOrDefault("cookie", headers.get("Cookie"));
-    String[] splitted = cookieValue.split(";");
 
-    var leoToken = Arrays.stream(splitted)
-        .takeWhile(s -> s.contains("LeoToken"))
-        .findFirst()
-        .map(s -> s.split("=")[1]);
+    var leoToken = getToken(cookieValue);
 
     if (leoToken.isEmpty()) {
-      logger.info("No valid cookie found " + cookieValue);
+      logger.error("No valid cookie found");
       return false;
     } else {
       var token = leoToken.get();
-      samClient.setAccessToken(token);
-      samClient.setBasePath(listenerProperties.getSamUrl());
-      var resourceApi = new ResourcesApi(samClient);
-      try {
-        return resourceApi.resourcePermissionV2(SAM_RESOURCE_TYPE, listenerProperties.getSamResourceId(), "write");
-      } catch (ApiException e) {
-        logger.info("Fail to check Sam permission", e);
-        return false;
-      }
+      return samResourceClient.checkCachedPermission(token);
     }
+  }
+
+  protected Optional<String> getToken(@NotNull String cookieValue) {
+    String[] splitted = cookieValue.split(";");
+
+    if(cookieValue.isEmpty())
+      return Optional.empty();
+    else
+      return Arrays.stream(splitted)
+        .filter(s -> s.contains("LeoToken"))
+        .findFirst()
+        .map(s -> s.split("=")[1]);
   }
 }

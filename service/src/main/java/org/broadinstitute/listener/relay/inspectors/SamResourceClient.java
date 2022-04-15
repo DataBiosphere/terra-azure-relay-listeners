@@ -27,12 +27,12 @@ public class SamResourceClient {
   // Should only be used in checkCachedPermission, but making it public so that we can test it
   @Cacheable("expiresAt")
   public Instant checkWritePermission(String accessToken) {
-    samClient.setAccessToken(accessToken);
-    var resourceApi = new ResourcesApi(samClient);
-
     try {
       var oauthInfo = tokenChecker.getOauthInfo(accessToken);
       if(oauthInfo.expires_in > 0) {
+        samClient.setAccessToken(accessToken);
+        var resourceApi = new ResourcesApi(samClient);
+
         var res = resourceApi.resourcePermissionV2(SAM_RESOURCE_TYPE, samResourceId, "write");
         var expiresAt = Instant.now().plusSeconds(oauthInfo.expires_in);
         if(res)

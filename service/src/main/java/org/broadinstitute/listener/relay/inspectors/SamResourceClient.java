@@ -42,10 +42,7 @@ public class SamResourceClient {
         logger.error("Token expired " + oauthInfo.error());
         return Instant.EPOCH;
       }
-    } catch (IOException e) {
-      logger.error("Fail to check token info", e);
-      return Instant.EPOCH;
-    } catch (InterruptedException e) {
+    } catch (IOException | InterruptedException e) {
       logger.error("Fail to check token info", e);
       return Instant.EPOCH;
     } catch (ApiException e) {

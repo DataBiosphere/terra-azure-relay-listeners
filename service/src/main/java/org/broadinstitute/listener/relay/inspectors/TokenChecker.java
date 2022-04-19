@@ -24,7 +24,7 @@ public class TokenChecker {
 
     if (jwtExpiration.isPresent()) {
       if(jwtExpiration.get().isAfter(now))
-        return new OauthInfo(Optional.of(jwtExpiration.get()), "");
+        return new OauthInfo(jwtExpiration, "");
       else
         return new OauthInfo(Optional.empty(), "JWT expired");
     } else {

@@ -29,18 +29,17 @@ public class SamResourceClient {
   public Instant checkWritePermission(String accessToken) {
     try {
       var oauthInfo = tokenChecker.getOauthInfo(accessToken);
-      if(oauthInfo.expires_in > 0) {
+      if(oauthInfo.expiresAt().isPresent()) {
         samClient.setAccessToken(accessToken);
         var resourceApi = new ResourcesApi(samClient);
 
         var res = resourceApi.resourcePermissionV2(SAM_RESOURCE_TYPE, samResourceId, "write");
-        var expiresAt = Instant.now().plusSeconds(oauthInfo.expires_in);
         if(res)
-          return expiresAt;
+          return oauthInfo.expiresAt().get();
         else
           return Instant.EPOCH;
       } else {
-        logger.error("Token expired " + oauthInfo.error);
+        logger.error("Token expired " + oauthInfo.error());
         return Instant.EPOCH;
       }
     } catch (IOException e) {

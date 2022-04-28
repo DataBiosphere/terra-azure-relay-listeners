@@ -35,5 +35,8 @@ class SamPermissionInspectorProcessorTest {
 
     var res4 = inspector.getToken("aldl;LeoToken=asdfaf");
     assertThat(res4, equalTo(Optional.of("asdfaf")));
+
+    var res5 = inspector.getToken(null);
+    assertThat(res5, equalTo(Optional.empty()));
   }
 }

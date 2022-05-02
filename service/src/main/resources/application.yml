@@ -3,6 +3,9 @@ server:
 
 spring:
   application.name: terra-azure-relay-listener
+  cache:
+    cache-names: expiresAt
+    caffeine.spec: maximumSize=100,expireAfterAccess=3600s
 
 listener:
   relayConnectionString:
@@ -11,4 +14,8 @@ listener:
     targetHost:
   requestInspectors:
 #    - headersLogger
+    - samChecker
+  samInspectorProperties:
+    samUrl:
+    samResourceId:
 

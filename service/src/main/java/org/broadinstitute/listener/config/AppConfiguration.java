@@ -7,19 +7,24 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import org.broadinstitute.dsde.workbench.client.sam.ApiClient;
 import org.broadinstitute.listener.relay.http.RelayedHttpRequestProcessor;
 import org.broadinstitute.listener.relay.inspectors.InspectorLocator;
 import org.broadinstitute.listener.relay.inspectors.InspectorsProcessor;
 import org.broadinstitute.listener.relay.inspectors.RequestInspector;
+import org.broadinstitute.listener.relay.inspectors.SamResourceClient;
+import org.broadinstitute.listener.relay.inspectors.TokenChecker;
 import org.broadinstitute.listener.relay.transport.DefaultTargetResolver;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @EnableConfigurationProperties(ListenerProperties.class)
+@EnableCaching
 public class AppConfiguration {
 
   @Autowired private ListenerProperties properties;
@@ -28,6 +33,17 @@ public class AppConfiguration {
   public TargetResolver targetResolver() {
     // return a simple resolver that uses the configuration value.
     return new DefaultTargetResolver(properties);
+  }
+
+  @Bean
+  public SamResourceClient samResourceClient() {
+    ApiClient samClient = new ApiClient();
+    samClient.setBasePath(properties.getSamInspectorProperties().samUrl());
+    // return a simple resolver that uses the configuration value.
+    return new SamResourceClient(
+        properties.getSamInspectorProperties().samResourceId(),
+        samClient,
+        new TokenChecker());
   }
 
   @Bean

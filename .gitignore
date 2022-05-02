@@ -15,6 +15,7 @@ env.txt
 
 HELP.md
 .gradle
+.run
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/

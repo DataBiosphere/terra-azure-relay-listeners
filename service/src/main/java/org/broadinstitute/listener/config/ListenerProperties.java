@@ -10,6 +10,16 @@ public class ListenerProperties {
   private String relayConnectionString;
   private String relayConnectionName;
   private TargetProperties targetProperties;
+
+  public SamInspectorProperties getSamInspectorProperties() {
+    return samInspectorProperties;
+  }
+
+  public void setSamInspectorProperties(SamInspectorProperties samInspectorProperties) {
+    this.samInspectorProperties = samInspectorProperties;
+  }
+
+  private SamInspectorProperties samInspectorProperties;
   private List<InspectorType> requestInspectors;
 
   public String getRelayConnectionString() {

@@ -11,7 +11,7 @@ plugins {
 	id 'io.freefair.lombok'
 }
 
-compileJava { options.release = 11 }
+sourceCompatibility = JavaVersion.VERSION_17
 
 repositories {
 	mavenCentral()
@@ -28,6 +28,8 @@ apply from: 'tooling.gradle'
 apply from: 'analysis.gradle'
 
 dependencies {
+	implementation 'org.jetbrains:annotations:20.1.0'
+	implementation 'com.auth0:java-jwt:3.19.1'
 	annotationProcessor 'org.immutables:value:2.8.8'
 	implementation('bio.terra:terra-common-lib:0.0.53-SNAPSHOT') {
 		// remove transitive database deps
@@ -36,7 +38,7 @@ dependencies {
 		exclude group: 'bio.terra', module: 'stairway'
 		exclude group: 'org.springframework.boot', module: 'spring-boot-starter-data-jdbc'
 	}
-	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:0.1-fa74f75'
+	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:0.1-cbcad54'
 	implementation 'com.microsoft.azure:azure-relay:0.0.4'
 	implementation 'org.apache.commons:commons-lang3:3.0'
 	implementation 'io.projectreactor:reactor-core:3.4.14'

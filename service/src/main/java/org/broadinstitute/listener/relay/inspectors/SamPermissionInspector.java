@@ -34,15 +34,12 @@ public class SamPermissionInspector implements RequestInspector {
   }
 
   private boolean checkPermission(Map<String, String> headers) {
-
     if (headers == null) {
       logger.error("No auth headers found");
       return false;
     }
 
-    var cookieValue = headers.getOrDefault("cookie", headers.get("Cookie"));
-
-    var leoToken = getToken(cookieValue);
+    var leoToken = getToken(headers);
 
     if (leoToken.isEmpty()) {
       logger.error("No valid cookie found");
@@ -58,12 +55,23 @@ public class SamPermissionInspector implements RequestInspector {
     return expiresAt.isAfter(Instant.now());
   }
 
-  protected Optional<String> getToken(String cookieValue) {
+  protected Optional<String> getToken(Map<String, String> headers) {
+    return getTokenFromCookie(headers).or(() -> getTokenFromAuthorization(headers));
+  }
+
+  protected Optional<String> getTokenFromCookie(Map<String, String> headers) {
+    var cookieValue = headers.getOrDefault("cookie", headers.get("Cookie"));
+
     String[] splitted = Optional.ofNullable(cookieValue).map(s -> s.split(";")).orElse(new String[0]);
 
     return Arrays.stream(splitted)
         .filter(s -> s.contains("LeoToken="))
         .findFirst()
         .map(s -> s.split("=")[1]);
+  }
+
+  protected Optional<String> getTokenFromAuthorization(Map<String, String> headers) {
+    var authValue = headers.getOrDefault("Authorization", null);
+    return Optional.ofNullable(authValue);
   }
 }

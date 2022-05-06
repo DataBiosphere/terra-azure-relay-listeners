@@ -72,6 +72,6 @@ public class SamPermissionInspector implements RequestInspector {
 
   protected Optional<String> getTokenFromAuthorization(Map<String, String> headers) {
     var authValue = headers.getOrDefault("Authorization", null);
-    return Optional.ofNullable(authValue);
+    return Optional.ofNullable(authValue).map(s -> s.replaceFirst("Bearer ", ""));
   }
 }

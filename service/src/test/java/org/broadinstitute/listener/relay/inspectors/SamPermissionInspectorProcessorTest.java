@@ -45,7 +45,7 @@ class SamPermissionInspectorProcessorTest {
     assertThat(res4, equalTo(Optional.of("asdfaf")));
 
     Map<String, String> headers5 = new HashMap<>();
-    headers5.put("Authorization", "asdf");
+    headers5.put("Authorization", "Bearer asdf");
     var res5 = inspector.getToken(headers5);
     assertThat(res5, equalTo(Optional.of("asdf")));
   }

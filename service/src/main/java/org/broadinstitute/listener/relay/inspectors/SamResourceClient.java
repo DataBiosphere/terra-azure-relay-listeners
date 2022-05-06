@@ -34,6 +34,7 @@ public class SamResourceClient {
         samClient.setAccessToken(accessToken);
         var resourceApi = new ResourcesApi(samClient);
 
+        logger.info("token "+accessToken);
         var res = resourceApi.resourcePermissionV2(SAM_RESOURCE_TYPE, samResourceId, "write");
         if(res)
           return oauthInfo.expiresAt().get();

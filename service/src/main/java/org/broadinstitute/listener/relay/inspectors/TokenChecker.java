@@ -47,7 +47,7 @@ public class TokenChecker {
       var decoded = JWT.decode(token);
       return Optional.of(decoded.getExpiresAt().toInstant());
     } catch (com.auth0.jwt.exceptions.JWTDecodeException e) {
-      logger.info("Fail to check decode JWT", e);
+      logger.debug("Fail to check decode JWT", e);
       return Optional.empty();
     }
   }

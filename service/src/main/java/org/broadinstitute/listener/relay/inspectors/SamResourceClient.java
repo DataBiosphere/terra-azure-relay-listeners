@@ -30,6 +30,7 @@ public class SamResourceClient {
     try {
       var oauthInfo = tokenChecker.getOauthInfo(accessToken);
       if(oauthInfo.expiresAt().isPresent()) {
+logger.info("token: "+accessToken);
         samClient.setAccessToken(accessToken);
         var resourceApi = new ResourcesApi(samClient);
 

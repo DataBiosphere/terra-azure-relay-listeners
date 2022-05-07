@@ -38,7 +38,6 @@ public class SamPermissionInspector implements RequestInspector {
       return false;
     }
 
-    logger.info("headers "+ headers);
     var leoToken = getToken(headers);
 
     if (leoToken.isEmpty()) {

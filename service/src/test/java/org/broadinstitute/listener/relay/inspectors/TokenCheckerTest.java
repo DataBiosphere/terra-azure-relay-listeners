@@ -4,7 +4,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,10 +27,10 @@ class TokenCheckerTest {
     assertThat(res.expiresAt(), equalTo(Optional.empty()));
   }
 
-//  @Test
-//  void checkWritePermission_b2c() throws IOException, InterruptedException {
-//    var res = tokenChecker.getOauthInfo("<token>>");
-//    assertThat(res.error(), equalTo(""));
-//    assertThat(res.expiresAt(), equalTo(Optional.of(Instant.ofEpochMilli(1650461564))));
-//  }
+  //  @Test
+  //  void checkWritePermission_b2c() throws IOException, InterruptedException {
+  //    var res = tokenChecker.getOauthInfo("<token>>");
+  //    assertThat(res.error(), equalTo(""));
+  //    assertThat(res.expiresAt(), equalTo(Optional.of(Instant.ofEpochMilli(1650461564))));
+  //  }
 }

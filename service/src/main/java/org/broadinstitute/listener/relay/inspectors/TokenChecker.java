@@ -14,7 +14,8 @@ import org.slf4j.LoggerFactory;
 
 public class TokenChecker {
   private final HttpClient httpClient = HttpClient.newHttpClient();
-  private final String GOOGLE_OAUTH_SERVER = "https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=";
+  private final String GOOGLE_OAUTH_SERVER =
+      "https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=";
   private final Logger logger = LoggerFactory.getLogger(SamResourceClient.class);
 
   public OauthInfo getOauthInfo(String token) throws IOException, InterruptedException {
@@ -23,22 +24,17 @@ public class TokenChecker {
     var now = Instant.now();
 
     if (jwtExpiration.isPresent()) {
-      if(jwtExpiration.get().isAfter(now))
-        return new OauthInfo(jwtExpiration, "");
-      else
-        return new OauthInfo(Optional.empty(), "JWT expired");
+      if (jwtExpiration.get().isAfter(now)) return new OauthInfo(jwtExpiration, "");
+      else return new OauthInfo(Optional.empty(), "JWT expired");
     } else {
-      var request = HttpRequest.newBuilder()
-          .uri(URI.create(GOOGLE_OAUTH_SERVER + token))
-          .build();
+      var request = HttpRequest.newBuilder().uri(URI.create(GOOGLE_OAUTH_SERVER + token)).build();
 
       var oauthInfoResponse = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
       var decoded = new Gson().fromJson(oauthInfoResponse.body(), GoogleOauthInfoResponse.class);
 
-      if(decoded.expires_in > 0)
-          return new OauthInfo(Optional.of(now.plusSeconds(decoded.expires_in)), decoded.error);
-      else
-        return new OauthInfo(Optional.empty(), decoded.error);
+      if (decoded.expires_in > 0)
+        return new OauthInfo(Optional.of(now.plusSeconds(decoded.expires_in)), decoded.error);
+      else return new OauthInfo(Optional.empty(), decoded.error);
     }
   }
 
@@ -47,7 +43,7 @@ public class TokenChecker {
       var decoded = JWT.decode(token);
       return Optional.of(decoded.getExpiresAt().toInstant());
     } catch (com.auth0.jwt.exceptions.JWTDecodeException e) {
-      logger.info("Fail to check decode JWT", e);
+      logger.debug("Fail to check decode JWT", e);
       return Optional.empty();
     }
   }

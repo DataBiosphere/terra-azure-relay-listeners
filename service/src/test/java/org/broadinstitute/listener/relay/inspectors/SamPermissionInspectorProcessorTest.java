@@ -3,6 +3,8 @@ package org.broadinstitute.listener.relay.inspectors;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,19 +26,32 @@ class SamPermissionInspectorProcessorTest {
 
   @Test
   void getToken() {
-    var res1 = inspector.getToken("");
+    var res1 = inspector.getToken(new HashMap<>());
     assertThat(res1, equalTo(Optional.empty()));
 
-    var res2 = inspector.getToken("fake;");
+    Map<String, String> headers2 = new HashMap<>();
+    headers2.put("cookie", "fake;");
+    var res2 = inspector.getToken(headers2);
     assertThat(res2, equalTo(Optional.empty()));
 
-    var res3 = inspector.getToken("LeoToken=asdfaf");
+    Map<String, String> headers3 = new HashMap<>();
+    headers3.put("cookie", "LeoToken=asdfaf");
+    var res3 = inspector.getToken(headers3);
     assertThat(res3, equalTo(Optional.of("asdfaf")));
 
-    var res4 = inspector.getToken("aldl;LeoToken=asdfaf");
+    Map<String, String> headers4 = new HashMap<>();
+    headers4.put("cookie", "aldl;LeoToken=asdfaf");
+    var res4 = inspector.getToken(headers4);
     assertThat(res4, equalTo(Optional.of("asdfaf")));
 
-    var res5 = inspector.getToken(null);
-    assertThat(res5, equalTo(Optional.empty()));
+    Map<String, String> headers5 = new HashMap<>();
+    headers5.put("Authorization", "Bearer asdf");
+    var res5 = inspector.getToken(headers5);
+    assertThat(res5, equalTo(Optional.of("asdf")));
+
+    Map<String, String> headers6 = new HashMap<>();
+    headers6.put("Cookie", "LeoToken=asdfaf");
+    var res6 = inspector.getToken(headers3);
+    assertThat(res6, equalTo(Optional.of("asdfaf")));
   }
 }

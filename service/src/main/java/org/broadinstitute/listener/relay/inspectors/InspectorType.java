@@ -1,7 +1,8 @@
 package org.broadinstitute.listener.relay.inspectors;
 
 public enum InspectorType {
-  HEADERS_LOGGER(InspectorNameConstants.HEADERS_LOGGER), SAM_CHECKER(InspectorNameConstants.SAM_CHECKER);
+  HEADERS_LOGGER(InspectorNameConstants.HEADERS_LOGGER),
+  SAM_CHECKER(InspectorNameConstants.SAM_CHECKER);
 
   private final String inspectorName;
 

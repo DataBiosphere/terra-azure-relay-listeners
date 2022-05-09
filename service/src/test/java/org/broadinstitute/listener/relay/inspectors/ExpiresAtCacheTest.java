@@ -29,12 +29,11 @@ import org.springframework.test.util.AopTestUtils;
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration
 class ExpiresAtCacheTest {
-  @Autowired
-  private CacheManager cacheManager;
+  @Autowired private CacheManager cacheManager;
 
-  private SamResourceClient mock;;
-  @Autowired
-  private SamResourceClient samResourceClient;
+  private SamResourceClient mock;
+  ;
+  @Autowired private SamResourceClient samResourceClient;
 
   @Configuration
   @EnableCaching
@@ -45,11 +44,11 @@ class ExpiresAtCacheTest {
     }
 
     @Bean
-    public SamResourceClient samResourceClient(){
+    public SamResourceClient samResourceClient() {
       return mock(SamResourceClient.class);
     }
-
   }
+
   @BeforeEach
   void setUp() {
     mock = AopTestUtils.getTargetObject(samResourceClient);
@@ -58,7 +57,8 @@ class ExpiresAtCacheTest {
   }
 
   private Optional<Instant> getCachedExpiresAt(String accessToken) {
-    return ofNullable(cacheManager.getCache("expiresAt")).map(c -> c.get(accessToken, Instant.class));
+    return ofNullable(cacheManager.getCache("expiresAt"))
+        .map(c -> c.get(accessToken, Instant.class));
   }
 
   @Test

@@ -29,15 +29,14 @@ public class SamResourceClient {
   public Instant checkWritePermission(String accessToken) {
     try {
       var oauthInfo = tokenChecker.getOauthInfo(accessToken);
-      if(oauthInfo.expiresAt().isPresent()) {
+      if (oauthInfo.expiresAt().isPresent()) {
 
         samClient.setAccessToken(accessToken);
         var resourceApi = new ResourcesApi(samClient);
 
         var res = resourceApi.resourcePermissionV2(SAM_RESOURCE_TYPE, samResourceId, "write");
-        if(res)
-          return oauthInfo.expiresAt().get();
-        else{
+        if (res) return oauthInfo.expiresAt().get();
+        else {
           logger.error("unauthorized request");
           return Instant.EPOCH;
         }
@@ -57,5 +56,3 @@ public class SamResourceClient {
     }
   }
 }
-
-

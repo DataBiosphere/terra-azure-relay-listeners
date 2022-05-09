@@ -48,5 +48,10 @@ class SamPermissionInspectorProcessorTest {
     headers5.put("Authorization", "Bearer asdf");
     var res5 = inspector.getToken(headers5);
     assertThat(res5, equalTo(Optional.of("asdf")));
+
+    Map<String, String> headers6 = new HashMap<>();
+    headers6.put("Cookie", "LeoToken=asdfaf");
+    var res6 = inspector.getToken(headers3);
+    assertThat(res6, equalTo(Optional.of("asdfaf")));
   }
 }

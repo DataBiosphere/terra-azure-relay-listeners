@@ -61,7 +61,8 @@ public class SamPermissionInspector implements RequestInspector {
   protected Optional<String> getTokenFromCookie(Map<String, String> headers) {
     var cookieValue = headers.getOrDefault("cookie", headers.get("Cookie"));
 
-    String[] splitted = Optional.ofNullable(cookieValue).map(s -> s.split(";")).orElse(new String[0]);
+    String[] splitted =
+        Optional.ofNullable(cookieValue).map(s -> s.split(";")).orElse(new String[0]);
 
     return Arrays.stream(splitted)
         .filter(s -> s.contains("LeoToken="))

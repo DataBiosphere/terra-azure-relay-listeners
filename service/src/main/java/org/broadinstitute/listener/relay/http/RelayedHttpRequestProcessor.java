@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Locale;
@@ -24,7 +25,7 @@ public class RelayedHttpRequestProcessor {
   protected final Logger logger = LoggerFactory.getLogger(RelayedHttpRequestProcessor.class);
 
   public RelayedHttpRequestProcessor(@NonNull TargetResolver targetHostResolver) {
-    this.httpClient = HttpClient.newBuilder().build();
+    this.httpClient = HttpClient.newBuilder().version(Version.HTTP_1_1).build();
     this.targetHostResolver = targetHostResolver;
   }
 

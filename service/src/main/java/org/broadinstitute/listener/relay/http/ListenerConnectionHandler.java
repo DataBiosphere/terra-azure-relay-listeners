@@ -61,7 +61,7 @@ public class ListenerConnectionHandler {
                         context.getRequest().getUri(),
                         context.getTrackingContext().getTrackingId());
                     sink.next(context);
-                  } catch (Exception ex) {
+                  } catch (Throwable ex) {
                     logger.error(
                         "Error while creating relayed HTTP request. Tracking ID:{}",
                         context.getTrackingContext().getTrackingId(),

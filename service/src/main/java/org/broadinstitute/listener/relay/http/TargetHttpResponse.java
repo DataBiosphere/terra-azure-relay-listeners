@@ -1,9 +1,11 @@
 package org.broadinstitute.listener.relay.http;
 
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,14 +44,27 @@ public class TargetHttpResponse extends HttpMessage {
   }
 
   public static TargetHttpResponse createTargetHttpResponseFromException(
-      int statusCode, Exception ex, RelayedHttpListenerContext context) {
+      int statusCode, Throwable ex, RelayedHttpListenerContext context) {
 
     String statusDescription = "";
     if (ex != null && ex.getMessage() != null) {
       statusDescription = ex.getMessage();
     }
 
-    return new TargetHttpResponse(null, null, statusCode, statusDescription, context);
+    String body =
+        String.format(
+            "{ \"message\":\"The listener failed to process the request.\", \"tracking_id\":\"%s\"}",
+            context.getTrackingContext().getTrackingId());
+
+    Map<String, String> headers = new HashMap<>();
+    headers.put("Content-Type", "application/json");
+
+    return new TargetHttpResponse(
+        headers,
+        new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)),
+        statusCode,
+        statusDescription,
+        context);
   }
 
   public static TargetHttpResponse createTargetHttpResponse(

@@ -12,6 +12,7 @@ import com.microsoft.azure.relay.RelayedHttpListenerResponse;
 import com.microsoft.azure.relay.TrackingContext;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -49,6 +50,7 @@ class RelayedHttpRequestProcessorTest {
 
   @Mock private HttpClient httpClient;
 
+  @Mock private InputStream mockBody;
   @Mock private RelayedHttpListenerContext context;
   @Mock private RelayedHttpListenerRequest listenerRequest;
   @Mock private RelayedHttpRequest request;
@@ -103,6 +105,7 @@ class RelayedHttpRequestProcessorTest {
 
     assertThat(response.getStatusCode(), equalTo(500));
     assertThat(response.getStatusDescription(), equalTo("Error Msg"));
+    assertThat(response.getBody().isPresent(), equalTo(true));
   }
 
   @Test
@@ -118,6 +121,33 @@ class RelayedHttpRequestProcessorTest {
     verify(responseStream).write(responseData.capture());
 
     assertThat(new String(responseData.getValue()), equalTo(BODY_CONTENT));
+  }
+
+  @Test
+  void writeTargetResponseOnCaller_withBodyResponseStreamsClose() throws IOException {
+    when(targetHttpResponse.getContext()).thenReturn(context);
+    when(targetHttpResponse.getBody()).thenReturn(Optional.of(mockBody));
+    when(targetHttpResponse.getStatusCode()).thenReturn(200);
+    when(context.getResponse()).thenReturn(listenerResponse);
+    when(targetHttpResponse.getCallerResponseOutputStream()).thenReturn(responseStream);
+
+    processor.writeTargetResponseOnCaller(targetHttpResponse);
+
+    verify(responseStream).close();
+    verify(mockBody).close();
+  }
+
+  @Test
+  void writeTargetResponseOnCaller_withOutBodyCallerResponseStreamCloses() throws IOException {
+    when(targetHttpResponse.getContext()).thenReturn(context);
+    when(targetHttpResponse.getBody()).thenReturn(Optional.empty());
+    when(targetHttpResponse.getStatusCode()).thenReturn(500);
+    when(context.getResponse()).thenReturn(listenerResponse);
+    when(targetHttpResponse.getCallerResponseOutputStream()).thenReturn(responseStream);
+
+    processor.writeTargetResponseOnCaller(targetHttpResponse);
+
+    verify(responseStream).close();
   }
 
   private void setUpRelayedHttpRequestMock()

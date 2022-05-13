@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.when;
 
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
+import com.microsoft.azure.relay.TrackingContext;
 import java.io.ByteArrayInputStream;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpResponse;
@@ -28,6 +29,8 @@ class TargetHttpResponseTest {
 
   @Mock private RelayedHttpListenerContext context;
 
+  @Mock private TrackingContext trackingContext;
+
   @Mock private ByteArrayInputStream body;
 
   @Mock private HttpResponse httpResponse;
@@ -44,13 +47,16 @@ class TargetHttpResponseTest {
   }
 
   @Test
-  void createTargetHttpResponseFromException_containsExceptionMessageAndStatusCode() {
+  void createTargetHttpResponseFromException_containsExceptionMessageStatusCodeAndBody() {
     when(exception.getMessage()).thenReturn(ERR_MSG);
+    when(context.getTrackingContext()).thenReturn(trackingContext);
+    when(trackingContext.getTrackingId()).thenReturn("123abc");
 
     targetHttpResponse =
         targetHttpResponse.createTargetHttpResponseFromException(500, exception, context);
     assertThat(targetHttpResponse.getStatusCode(), equalTo(500));
     assertThat(targetHttpResponse.getStatusDescription(), equalTo(ERR_MSG));
+    assertThat(targetHttpResponse.getBody().isPresent(), equalTo(true));
   }
 
   @Test

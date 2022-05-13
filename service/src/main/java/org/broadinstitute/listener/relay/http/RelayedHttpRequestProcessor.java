@@ -48,7 +48,7 @@ public class RelayedHttpRequestProcessor {
 
       return TargetHttpResponse.createTargetHttpResponse(clientResponse, request.getContext());
 
-    } catch (Exception ex) {
+    } catch (Throwable ex) {
 
       if (clientResponse != null && clientResponse.body() != null) {
         try {
@@ -101,28 +101,37 @@ public class RelayedHttpRequestProcessor {
     if (targetResponse.getHeaders().isPresent()) {
       listenerResponse.getHeaders().putAll(targetResponse.getHeaders().get());
     }
+    OutputStream outputStream = targetResponse.getCallerResponseOutputStream();
 
+    Result result = Result.SUCCESS;
     if (targetResponse.getBody().isPresent()) {
       try {
-        OutputStream outputStream = targetResponse.getCallerResponseOutputStream();
         outputStream.write(targetResponse.getBody().get().readAllBytes());
-        outputStream.close();
       } catch (IOException e) {
         logger.error("Failed to write response body to the remote client.", e);
-        return Result.FAILURE;
+        result = Result.FAILURE;
       }
+
       try {
         targetResponse.getBody().get().close();
       } catch (IOException e) {
         logger.error("Failed to close target response.", e);
-        return Result.FAILURE;
+        result = Result.FAILURE;
       }
     }
-    return Result.SUCCESS;
+
+    try {
+      outputStream.close();
+    } catch (IOException e) {
+      logger.error("Failed to close caller response.", e);
+      result = Result.FAILURE;
+    }
+
+    return result;
   }
 
-  private TargetHttpResponse handleExceptionResponse(
-      Exception exception, RelayedHttpListenerContext context) {
+  public TargetHttpResponse handleExceptionResponse(
+      Throwable exception, RelayedHttpListenerContext context) {
     String message =
         String.format(
             Locale.ROOT,

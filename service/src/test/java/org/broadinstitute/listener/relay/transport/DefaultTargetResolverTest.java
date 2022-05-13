@@ -76,13 +76,26 @@ class DefaultTargetResolverTest {
   }
 
   @Test
-  void createTargetUrl_requestWithPathAndQuery()
+  void createTargetUrl_requestWithPathAndQueryAndEntityPath()
       throws URISyntaxException, InvalidRelayTargetException {
     URI relayRequest = createRelayRequest(TARGET_PATH, TARGET_QS, false);
 
     URL target = resolver.createTargetUrl(relayRequest);
 
     assertThat(target.toString(), equalTo(getExpectedTargetUrl(TARGET_PATH)));
+    assertThat(target.toString().contains(HYBRID_CONN), equalTo(true));
+  }
+
+  @Test
+  void createTargetUrl_requestWithPathAndQueryAndNoEntityPath()
+      throws URISyntaxException, InvalidRelayTargetException {
+    URI relayRequest = createRelayRequest(TARGET_PATH, TARGET_QS, false);
+
+    properties.getTargetProperties().setRemoveEntityPathFromHttpUrl(true);
+
+    URL target = resolver.createTargetUrl(relayRequest);
+
+    assertThat(target.toString().contains(HYBRID_CONN), equalTo(false));
   }
 
   @Test

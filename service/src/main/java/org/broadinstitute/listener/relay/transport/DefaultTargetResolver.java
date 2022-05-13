@@ -55,7 +55,8 @@ public class DefaultTargetResolver implements TargetResolver {
   @Override
   public URL createTargetUrl(@NonNull URI relayedRequestUri) throws InvalidRelayTargetException {
 
-    return createTargetUrl(relayedRequestUri, false);
+    return createTargetUrl(
+        relayedRequestUri, properties.getTargetProperties().isRemoveEntityPathFromHttpUrl());
   }
 
   private URL createTargetUrl(URI relayedRequestUri, boolean removeEntityPath)

@@ -2,6 +2,7 @@ package org.broadinstitute.listener.config;
 
 public class TargetProperties {
   private boolean removeEntityPathFromWssUri = false;
+  private boolean removeEntityPathFromHttpUrl = false;
   private String targetHost;
 
   public boolean isRemoveEntityPathFromWssUri() {
@@ -18,5 +19,13 @@ public class TargetProperties {
 
   public void setTargetHost(String targetHost) {
     this.targetHost = targetHost;
+  }
+
+  public boolean isRemoveEntityPathFromHttpUrl() {
+    return removeEntityPathFromHttpUrl;
+  }
+
+  public void setRemoveEntityPathFromHttpUrl(boolean removeEntityPathFromHttpUrl) {
+    this.removeEntityPathFromHttpUrl = removeEntityPathFromHttpUrl;
   }
 }

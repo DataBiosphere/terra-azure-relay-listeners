@@ -21,6 +21,8 @@ The Terra Azure Relay Listener establishes a bi-directional channel with Azure R
 
 `requestInspectors:` A list of request inspectors to be enabled.
 
+`targetProperties.removeEntityPathFromHttpUrl` If `true` the HTTP request to the target won't include the Entity Path (Hybrid Connection name) in the URL. The default value is `false`.
+
 ## Running Jupyter Notebooks
 
 To enable access to a Jupyter Notebooks server instance via Azure Relay using the listener,

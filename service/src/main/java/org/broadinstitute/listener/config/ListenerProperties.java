@@ -10,6 +10,16 @@ public class ListenerProperties {
   private String relayConnectionString;
   private String relayConnectionName;
   private TargetProperties targetProperties;
+  private SamInspectorProperties samInspectorProperties;
+  private CorsSupportProperties corsSupportProperties = new CorsSupportProperties("OPTIONS, POST, PUT, GET, DELETE, HEAD, PATCH");
+
+  public CorsSupportProperties getCorsSupportProperties() {
+    return corsSupportProperties;
+  }
+
+  public void setCorsSupportProperties(CorsSupportProperties corsSupportProperties) {
+    this.corsSupportProperties = corsSupportProperties;
+  }
 
   public SamInspectorProperties getSamInspectorProperties() {
     return samInspectorProperties;
@@ -19,7 +29,6 @@ public class ListenerProperties {
     this.samInspectorProperties = samInspectorProperties;
   }
 
-  private SamInspectorProperties samInspectorProperties;
   private List<InspectorType> requestInspectors;
 
   public String getRelayConnectionString() {

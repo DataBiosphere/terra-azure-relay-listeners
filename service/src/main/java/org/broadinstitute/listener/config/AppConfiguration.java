@@ -46,7 +46,7 @@ public class AppConfiguration {
 
   @Bean
   public RelayedHttpRequestProcessor relayedHttpRequestProcessor(TargetResolver targetResolver) {
-    return new RelayedHttpRequestProcessor(targetResolver);
+    return new RelayedHttpRequestProcessor(targetResolver, properties.getCorsSupportProperties());
   }
 
   @Bean

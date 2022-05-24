@@ -13,26 +13,33 @@ import java.net.http.HttpResponse;
 import java.util.Locale;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
+import org.broadinstitute.listener.config.CorsSupportProperties;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS;
 
 public class RelayedHttpRequestProcessor {
 
   private final HttpClient httpClient;
   private final TargetResolver targetHostResolver;
+  private final CorsSupportProperties corsSupportProperties;
+
   protected final Logger logger = LoggerFactory.getLogger(RelayedHttpRequestProcessor.class);
 
-  public RelayedHttpRequestProcessor(@NonNull TargetResolver targetHostResolver) {
+  public RelayedHttpRequestProcessor(@NonNull TargetResolver targetHostResolver,
+      CorsSupportProperties corsSupportProperties) {
     this.httpClient = HttpClient.newBuilder().version(Version.HTTP_1_1).build();
     this.targetHostResolver = targetHostResolver;
+    this.corsSupportProperties = corsSupportProperties;
   }
 
   public RelayedHttpRequestProcessor(
-      HttpClient httpClient, @NonNull TargetResolver targetHostResolver) {
+      HttpClient httpClient, @NonNull TargetResolver targetHostResolver, CorsSupportProperties corsSupportProperties) {
     this.httpClient = httpClient;
     this.targetHostResolver = targetHostResolver;
+    this.corsSupportProperties = corsSupportProperties;
   }
 
   public TargetHttpResponse executeRequestOnTarget(RelayedHttpListenerContext requestContext) {
@@ -75,6 +82,23 @@ public class RelayedHttpRequestProcessor {
             context.getTrackingContext().getTrackingId());
     listenerResponse.setStatusCode(403);
     listenerResponse.setStatusDescription(msg);
+    try {
+      listenerResponse.getOutputStream().close();
+    } catch (IOException e) {
+      logger.error("Failed to close response body to the remote client.", e);
+    }
+    return Result.FAILURE;
+  }
+
+  public Result writePreflightResponse(RelayedHttpListenerContext context) {
+    if (context.getResponse() == null) {
+      logger.error("The context did not have a valid response");
+      return Result.FAILURE;
+    }
+
+    RelayedHttpListenerResponse listenerResponse = context.getResponse();
+    listenerResponse.setStatusCode(204);
+    listenerResponse.getHeaders().put(ACCESS_CONTROL_ALLOW_METHODS, corsSupportProperties.preflightMethods());
     try {
       listenerResponse.getOutputStream().close();
     } catch (IOException e) {

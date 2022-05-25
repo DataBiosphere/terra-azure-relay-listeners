@@ -1,5 +1,11 @@
 package org.broadinstitute.listener.relay.http;
 
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS;
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS;
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS;
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_MAX_AGE;
+
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
 import com.microsoft.azure.relay.RelayedHttpListenerResponse;
 import java.io.IOException;
@@ -18,7 +24,6 @@ import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
-import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS;
 
 public class RelayedHttpRequestProcessor {
 
@@ -28,15 +33,17 @@ public class RelayedHttpRequestProcessor {
 
   protected final Logger logger = LoggerFactory.getLogger(RelayedHttpRequestProcessor.class);
 
-  public RelayedHttpRequestProcessor(@NonNull TargetResolver targetHostResolver,
-      CorsSupportProperties corsSupportProperties) {
+  public RelayedHttpRequestProcessor(
+      @NonNull TargetResolver targetHostResolver, CorsSupportProperties corsSupportProperties) {
     this.httpClient = HttpClient.newBuilder().version(Version.HTTP_1_1).build();
     this.targetHostResolver = targetHostResolver;
     this.corsSupportProperties = corsSupportProperties;
   }
 
   public RelayedHttpRequestProcessor(
-      HttpClient httpClient, @NonNull TargetResolver targetHostResolver, CorsSupportProperties corsSupportProperties) {
+      HttpClient httpClient,
+      @NonNull TargetResolver targetHostResolver,
+      CorsSupportProperties corsSupportProperties) {
     this.httpClient = httpClient;
     this.targetHostResolver = targetHostResolver;
     this.corsSupportProperties = corsSupportProperties;
@@ -98,7 +105,22 @@ public class RelayedHttpRequestProcessor {
 
     RelayedHttpListenerResponse listenerResponse = context.getResponse();
     listenerResponse.setStatusCode(204);
-    listenerResponse.getHeaders().put(ACCESS_CONTROL_ALLOW_METHODS, corsSupportProperties.preflightMethods());
+    listenerResponse
+        .getHeaders()
+        .put(ACCESS_CONTROL_ALLOW_METHODS, corsSupportProperties.preflightMethods());
+
+    if (!listenerResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN))
+      listenerResponse
+          .getHeaders()
+          .put(
+              ACCESS_CONTROL_ALLOW_ORIGIN,
+              context.getRequest().getHeaders().getOrDefault("Origin", "*"));
+
+    listenerResponse.getHeaders().put(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+    listenerResponse
+        .getHeaders()
+        .put(ACCESS_CONTROL_ALLOW_HEADERS, "Authorization, Content-Type, Accept, Origin,X-App-Id");
+    listenerResponse.getHeaders().put(ACCESS_CONTROL_MAX_AGE, "1728000");
     try {
       listenerResponse.getOutputStream().close();
     } catch (IOException e) {

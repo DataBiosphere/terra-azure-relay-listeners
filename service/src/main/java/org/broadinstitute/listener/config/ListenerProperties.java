@@ -11,7 +11,8 @@ public class ListenerProperties {
   private String relayConnectionName;
   private TargetProperties targetProperties;
   private SamInspectorProperties samInspectorProperties;
-  private CorsSupportProperties corsSupportProperties = new CorsSupportProperties("OPTIONS, POST, PUT, GET, DELETE, HEAD, PATCH");
+  private CorsSupportProperties corsSupportProperties =
+      new CorsSupportProperties("OPTIONS, POST, PUT, GET, DELETE, HEAD, PATCH");
 
   public CorsSupportProperties getCorsSupportProperties() {
     return corsSupportProperties;

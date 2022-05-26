@@ -12,7 +12,10 @@ public class ListenerProperties {
   private TargetProperties targetProperties;
   private SamInspectorProperties samInspectorProperties;
   private CorsSupportProperties corsSupportProperties =
-      new CorsSupportProperties("OPTIONS, POST, PUT, GET, DELETE, HEAD, PATCH");
+      new CorsSupportProperties(
+          "OPTIONS, POST, PUT, GET, DELETE, HEAD, PATCH",
+          "Authorization, Content-Type, Accept, Origin,X-App-Id",
+          "1728000");
 
   public CorsSupportProperties getCorsSupportProperties() {
     return corsSupportProperties;

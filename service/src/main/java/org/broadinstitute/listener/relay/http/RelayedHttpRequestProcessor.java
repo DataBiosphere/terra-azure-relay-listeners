@@ -60,7 +60,8 @@ public class RelayedHttpRequestProcessor {
 
       clientResponse = httpClient.send(localRequest, HttpResponse.BodyHandlers.ofInputStream());
 
-      return TargetHttpResponse.createTargetHttpResponse(clientResponse, request.getContext());
+      return TargetHttpResponse.createTargetHttpResponse(
+          clientResponse, request.getContext(), corsSupportProperties);
 
     } catch (Throwable ex) {
 
@@ -109,18 +110,17 @@ public class RelayedHttpRequestProcessor {
         .getHeaders()
         .put(ACCESS_CONTROL_ALLOW_METHODS, corsSupportProperties.preflightMethods());
 
-    if (!listenerResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN))
-      listenerResponse
-          .getHeaders()
-          .put(
-              ACCESS_CONTROL_ALLOW_ORIGIN,
-              context.getRequest().getHeaders().getOrDefault("Origin", "*"));
+    listenerResponse
+        .getHeaders()
+        .put(
+            ACCESS_CONTROL_ALLOW_ORIGIN,
+            context.getRequest().getHeaders().getOrDefault("Origin", "*"));
 
     listenerResponse.getHeaders().put(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
     listenerResponse
         .getHeaders()
-        .put(ACCESS_CONTROL_ALLOW_HEADERS, "Authorization, Content-Type, Accept, Origin,X-App-Id");
-    listenerResponse.getHeaders().put(ACCESS_CONTROL_MAX_AGE, "1728000");
+        .put(ACCESS_CONTROL_ALLOW_HEADERS, corsSupportProperties.allowHeaders());
+    listenerResponse.getHeaders().put(ACCESS_CONTROL_MAX_AGE, corsSupportProperties.maxAge());
     try {
       listenerResponse.getOutputStream().close();
     } catch (IOException e) {

@@ -76,7 +76,7 @@ class RelayedHttpRequestProcessorTest {
     requestHeaders.put("REQ_HEADER", "REQ_VALUE");
     processor =
         new RelayedHttpRequestProcessor(
-            httpClient, targetHostResolver, new CorsSupportProperties("dummy"));
+            httpClient, targetHostResolver, new CorsSupportProperties("dummy", "dummy", "dummy"));
   }
 
   @Test

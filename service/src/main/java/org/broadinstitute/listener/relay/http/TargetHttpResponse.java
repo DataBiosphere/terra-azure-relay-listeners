@@ -13,6 +13,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import org.broadinstitute.listener.config.CorsSupportProperties;
 
 /**
  * Represents a response of the local endpoint that is independent of the HTTP client
@@ -72,7 +73,9 @@ public class TargetHttpResponse extends HttpMessage {
   }
 
   public static TargetHttpResponse createTargetHttpResponse(
-      HttpResponse<?> clientHttpResponse, RelayedHttpListenerContext context) {
+      HttpResponse<?> clientHttpResponse,
+      RelayedHttpListenerContext context,
+      CorsSupportProperties corsSupportProperties) {
     int responseStatusCode = clientHttpResponse.statusCode();
     Map<String, String> responseHeaders = new HashMap<>();
     if (clientHttpResponse.headers() != null && !clientHttpResponse.headers().map().isEmpty()) {
@@ -92,9 +95,8 @@ public class TargetHttpResponse extends HttpMessage {
         responseHeaders.put(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 
       responseHeaders.put(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
-      responseHeaders.put(
-          ACCESS_CONTROL_ALLOW_HEADERS, "Authorization, Content-Type, Accept, Origin, X-App-Id");
-      responseHeaders.put(ACCESS_CONTROL_MAX_AGE, "1728000");
+      responseHeaders.put(ACCESS_CONTROL_ALLOW_HEADERS, corsSupportProperties.allowHeaders());
+      responseHeaders.put(ACCESS_CONTROL_MAX_AGE, corsSupportProperties.maxAge());
       //      responseHeaders.put(CONTENT_SECURITY_POLICY, "*"); TODO: add CSP in the future
     }
 

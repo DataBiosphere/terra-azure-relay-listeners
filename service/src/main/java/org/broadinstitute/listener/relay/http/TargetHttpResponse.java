@@ -1,10 +1,5 @@
 package org.broadinstitute.listener.relay.http;
 
-import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS;
-import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS;
-import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_MAX_AGE;
-
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -13,7 +8,6 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import org.broadinstitute.listener.config.CorsSupportProperties;
 
 /**
  * Represents a response of the local endpoint that is independent of the HTTP client
@@ -73,9 +67,7 @@ public class TargetHttpResponse extends HttpMessage {
   }
 
   public static TargetHttpResponse createTargetHttpResponse(
-      HttpResponse<?> clientHttpResponse,
-      RelayedHttpListenerContext context,
-      CorsSupportProperties corsSupportProperties) {
+      HttpResponse<?> clientHttpResponse, RelayedHttpListenerContext context) {
     int responseStatusCode = clientHttpResponse.statusCode();
     Map<String, String> responseHeaders = new HashMap<>();
     if (clientHttpResponse.headers() != null && !clientHttpResponse.headers().map().isEmpty()) {
@@ -90,14 +82,6 @@ public class TargetHttpResponse extends HttpMessage {
                 String headerValue = value.iterator().next();
                 responseHeaders.put(key, headerValue);
               });
-
-      if (clientHttpResponse.headers().firstValue(ACCESS_CONTROL_ALLOW_ORIGIN).isEmpty())
-        responseHeaders.put(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-
-      responseHeaders.put(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
-      responseHeaders.put(ACCESS_CONTROL_ALLOW_HEADERS, corsSupportProperties.allowHeaders());
-      responseHeaders.put(ACCESS_CONTROL_MAX_AGE, corsSupportProperties.maxAge());
-      //      responseHeaders.put(CONTENT_SECURITY_POLICY, "*"); TODO: add CSP in the future
     }
 
     InputStream body = (InputStream) clientHttpResponse.body();

@@ -60,8 +60,7 @@ public class RelayedHttpRequestProcessor {
 
       clientResponse = httpClient.send(localRequest, HttpResponse.BodyHandlers.ofInputStream());
 
-      return TargetHttpResponse.createTargetHttpResponse(
-          clientResponse, request.getContext(), corsSupportProperties);
+      return TargetHttpResponse.createTargetHttpResponse(clientResponse, request.getContext());
 
     } catch (Throwable ex) {
 
@@ -125,8 +124,9 @@ public class RelayedHttpRequestProcessor {
       listenerResponse.getOutputStream().close();
     } catch (IOException e) {
       logger.error("Failed to close response body to the remote client.", e);
+      return Result.FAILURE;
     }
-    return Result.FAILURE;
+    return Result.SUCCESS;
   }
 
   public Result writeTargetResponseOnCaller(@NonNull TargetHttpResponse targetResponse) {

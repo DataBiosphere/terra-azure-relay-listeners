@@ -18,4 +18,7 @@ listener:
   samInspectorProperties:
     samUrl:
     samResourceId:
-
+  corsSupportProperties:
+    preflightMethods: "OPTIONS, POST, PUT, GET, DELETE, HEAD, PATCH"
+    allowHeaders: "Authorization, Content-Type, Accept, Origin,X-App-Id"
+    maxAge: "1728000"

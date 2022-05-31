@@ -14,7 +14,6 @@ import java.util.Map;
  * implementation.
  */
 public class TargetHttpResponse extends HttpMessage {
-
   public int getStatusCode() {
     return statusCode;
   }

@@ -1,5 +1,11 @@
 package org.broadinstitute.listener.relay.http;
 
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS;
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS;
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS;
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_MAX_AGE;
+
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
 import com.microsoft.azure.relay.RelayedHttpListenerResponse;
 import java.io.IOException;
@@ -13,6 +19,7 @@ import java.net.http.HttpResponse;
 import java.util.Locale;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
+import org.broadinstitute.listener.config.CorsSupportProperties;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,17 +29,24 @@ public class RelayedHttpRequestProcessor {
 
   private final HttpClient httpClient;
   private final TargetResolver targetHostResolver;
+  private final CorsSupportProperties corsSupportProperties;
+
   protected final Logger logger = LoggerFactory.getLogger(RelayedHttpRequestProcessor.class);
 
-  public RelayedHttpRequestProcessor(@NonNull TargetResolver targetHostResolver) {
+  public RelayedHttpRequestProcessor(
+      @NonNull TargetResolver targetHostResolver, CorsSupportProperties corsSupportProperties) {
     this.httpClient = HttpClient.newBuilder().version(Version.HTTP_1_1).build();
     this.targetHostResolver = targetHostResolver;
+    this.corsSupportProperties = corsSupportProperties;
   }
 
   public RelayedHttpRequestProcessor(
-      HttpClient httpClient, @NonNull TargetResolver targetHostResolver) {
+      HttpClient httpClient,
+      @NonNull TargetResolver targetHostResolver,
+      CorsSupportProperties corsSupportProperties) {
     this.httpClient = httpClient;
     this.targetHostResolver = targetHostResolver;
+    this.corsSupportProperties = corsSupportProperties;
   }
 
   public TargetHttpResponse executeRequestOnTarget(RelayedHttpListenerContext requestContext) {
@@ -81,6 +95,38 @@ public class RelayedHttpRequestProcessor {
       logger.error("Failed to close response body to the remote client.", e);
     }
     return Result.FAILURE;
+  }
+
+  public Result writePreflightResponse(RelayedHttpListenerContext context) {
+    if (context.getResponse() == null) {
+      logger.error("The context did not have a valid response");
+      return Result.FAILURE;
+    }
+
+    RelayedHttpListenerResponse listenerResponse = context.getResponse();
+    listenerResponse.setStatusCode(204);
+    listenerResponse
+        .getHeaders()
+        .put(ACCESS_CONTROL_ALLOW_METHODS, corsSupportProperties.preflightMethods());
+
+    listenerResponse
+        .getHeaders()
+        .put(
+            ACCESS_CONTROL_ALLOW_ORIGIN,
+            context.getRequest().getHeaders().getOrDefault("Origin", "*"));
+
+    listenerResponse.getHeaders().put(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+    listenerResponse
+        .getHeaders()
+        .put(ACCESS_CONTROL_ALLOW_HEADERS, corsSupportProperties.allowHeaders());
+    listenerResponse.getHeaders().put(ACCESS_CONTROL_MAX_AGE, corsSupportProperties.maxAge());
+    try {
+      listenerResponse.getOutputStream().close();
+    } catch (IOException e) {
+      logger.error("Failed to close response body to the remote client.", e);
+      return Result.FAILURE;
+    }
+    return Result.SUCCESS;
   }
 
   public Result writeTargetResponseOnCaller(@NonNull TargetHttpResponse targetResponse) {

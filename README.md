@@ -15,13 +15,15 @@ The Terra Azure Relay Listener establishes a bi-directional channel with Azure R
 >*Note*: The connection string must contain an EntityPath parameter.
 > The value of EntityPath must be the Hybrid Connection name.
 
-`relayConnectionName:` Hybrid Connection name. Must the same value as the EntityPath.
+`relayConnectionName`: Hybrid Connection name. Must the same value as the EntityPath.
 
-`targetProperties.targetHost:` The local or private endpoint where the listener must forward all requests.
+`listener.targetProperties.targetHost`: The local or private endpoint where the listener must forward all requests.
 
-`requestInspectors:` A list of request inspectors to be enabled.
+`requestInspectors`: A list of request inspectors to be enabled.
 
-`targetProperties.removeEntityPathFromHttpUrl` If `true` the HTTP request to the target won't include the Entity Path (Hybrid Connection name) in the URL. The default value is `false`.
+`listener.targetProperties.removeEntityPathFromHttpUrl` If `true` the HTTP request to the target won't include the Entity Path (Hybrid Connection name) in the URL. The default value is `false`.
+
+`listener.corsSupportProperties.preflightMethods` Methods that we support CORS. Default to `OPTIONS, POST, PUT, GET, DELETE, HEAD, PATCH`.
 
 ## Running Jupyter Notebooks
 

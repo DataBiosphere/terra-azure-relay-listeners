@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.broadinstitute.listener.config.CorsSupportProperties;
 import org.broadinstitute.listener.relay.InvalidRelayTargetException;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,7 +74,9 @@ class RelayedHttpRequestProcessorTest {
     targetResponseHeaders.put("RES_HEADER", List.of("RES_VALUE"));
     requestHeaders = new HashMap<>();
     requestHeaders.put("REQ_HEADER", "REQ_VALUE");
-    processor = new RelayedHttpRequestProcessor(httpClient, targetHostResolver);
+    processor =
+        new RelayedHttpRequestProcessor(
+            httpClient, targetHostResolver, new CorsSupportProperties("dummy", "dummy", "dummy"));
   }
 
   @Test

@@ -36,6 +36,11 @@ public class ListenerConnectionHandler {
     return this.inspectorsProcessor.isRelayedHttpRequestAccepted(listenerRequest);
   }
 
+  public boolean isNotPreflight(RelayedHttpListenerRequest listenerRequest) {
+    // TODO: security enhancements, validate origin is valid
+    return !listenerRequest.getHttpMethod().equals("OPTIONS");
+  }
+
   public boolean isRelayedWebSocketUpgradeRequestAcceptedByInspectors(
       RelayedHttpListenerRequest listenerRequest) {
     return this.inspectorsProcessor.isRelayedWebSocketUpgradeRequestAccepted(listenerRequest);

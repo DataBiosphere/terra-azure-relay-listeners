@@ -76,6 +76,8 @@ public class RelayedRequestPipeline {
   public void registerHttpExecutionPipeline() {
     listenerConnectionHandler
         .receiveRelayedHttpRequests()
+        .filter(c -> listenerConnectionHandler.isNotPreflight(c.getRequest()))
+        .doOnDiscard(RelayedHttpListenerContext.class, httpRequestProcessor::writePreflightResponse)
         .filter(
             c -> listenerConnectionHandler.isRelayedHttpRequestAcceptedByInspectors(c.getRequest()))
         .doOnDiscard(

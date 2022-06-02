@@ -146,7 +146,10 @@ public class RelayedHttpRequestProcessor {
 
     if (targetResponse.getHeaders().isPresent()) {
       listenerResponse.getHeaders().putAll(targetResponse.getHeaders().get());
+
+      removeHeadersNotAcceptedByAzureRelay(listenerResponse.getHeaders());
     }
+
     OutputStream outputStream = targetResponse.getCallerResponseOutputStream();
 
     Result result = Result.SUCCESS;
@@ -174,6 +177,11 @@ public class RelayedHttpRequestProcessor {
     }
 
     return result;
+  }
+
+  private void removeHeadersNotAcceptedByAzureRelay(Map<String, String> headers) {
+    headers.remove("transfer-encoding");
+    headers.remove("Transfer-Encoding");
   }
 
   public TargetHttpResponse handleExceptionResponse(

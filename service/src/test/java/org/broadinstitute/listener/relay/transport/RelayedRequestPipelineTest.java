@@ -52,6 +52,7 @@ class RelayedRequestPipelineTest {
         .thenReturn(Flux.create(s -> s.next(requestContext)));
     when(listenerConnectionHandler.isRelayedHttpRequestAcceptedByInspectors(any()))
         .thenReturn(true);
+    when(listenerConnectionHandler.isNotPreflight(any())).thenReturn(true);
     when(relayedHttpRequestProcessor.executeRequestOnTarget(requestContext))
         .thenReturn(targetHttpResponse);
     when(relayedHttpRequestProcessor.writeTargetResponseOnCaller(targetHttpResponse))
@@ -70,6 +71,7 @@ class RelayedRequestPipelineTest {
         .thenReturn(Flux.create(s -> s.next(requestContext)));
     when(listenerConnectionHandler.isRelayedHttpRequestAcceptedByInspectors(any()))
         .thenReturn(false);
+    when(listenerConnectionHandler.isNotPreflight(any())).thenReturn(true);
 
     relayedRequestPipeline.registerHttpExecutionPipeline();
 

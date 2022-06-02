@@ -2,6 +2,8 @@ package org.broadinstitute.listener.relay.http;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -124,6 +126,22 @@ class RelayedHttpRequestProcessorTest {
     verify(responseStream).write(responseData.capture());
 
     assertThat(new String(responseData.getValue()), equalTo(BODY_CONTENT));
+  }
+
+  @Test
+  void writeTargetResponseOnCaller_removesInvalidAzureRelayHeaders() throws IOException {
+    when(targetHttpResponse.getContext()).thenReturn(context);
+    when(targetHttpResponse.getBody()).thenReturn(Optional.of(body));
+    when(targetHttpResponse.getStatusCode()).thenReturn(200);
+    Map<String, String> headers = new HashMap();
+    headers.put("transfer-encoding", "chunked");
+    when(targetHttpResponse.getHeaders()).thenReturn(Optional.of(headers));
+    when(context.getResponse()).thenReturn(listenerResponse);
+    when(targetHttpResponse.getCallerResponseOutputStream()).thenReturn(responseStream);
+
+    processor.writeTargetResponseOnCaller(targetHttpResponse);
+
+    assertThat(listenerResponse.getHeaders(), not(hasEntry("transfer-encoding", "chunked")));
   }
 
   @Test

@@ -9,6 +9,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.util.Optional;
+import org.broadinstitute.listener.relay.OauthInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,5 +54,3 @@ class GoogleOauthInfoResponse {
   int expires_in;
   String error;
 }
-
-record OauthInfo(Optional<Instant> expiresAt, String error) {}

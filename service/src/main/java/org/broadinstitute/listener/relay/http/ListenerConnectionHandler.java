@@ -4,6 +4,7 @@ import com.microsoft.azure.relay.HybridConnectionListener;
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
 import com.microsoft.azure.relay.RelayedHttpListenerRequest;
 import org.broadinstitute.listener.relay.InvalidRelayTargetException;
+import org.broadinstitute.listener.relay.Utils;
 import org.broadinstitute.listener.relay.inspectors.InspectorsProcessor;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.slf4j.Logger;
@@ -39,6 +40,13 @@ public class ListenerConnectionHandler {
   public boolean isNotPreflight(RelayedHttpListenerRequest listenerRequest) {
     // TODO: security enhancements, validate origin is valid
     return !listenerRequest.getHttpMethod().equals("OPTIONS");
+  }
+
+  public boolean isNotSetCookie(RelayedHttpListenerRequest listenerRequest) {
+    var isSetCookieRequest =
+        listenerRequest.getHttpMethod().equals("GET")
+            && Utils.isSetCookiePath(listenerRequest.getUri());
+    return !isSetCookieRequest;
   }
 
   public boolean isRelayedWebSocketUpgradeRequestAcceptedByInspectors(

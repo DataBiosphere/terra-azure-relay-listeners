@@ -26,6 +26,7 @@ import org.springframework.context.annotation.Configuration;
 @EnableConfigurationProperties(ListenerProperties.class)
 @EnableCaching
 public class AppConfiguration {
+  TokenChecker tokenChecker = new TokenChecker();
 
   @Autowired private ListenerProperties properties;
 
@@ -41,12 +42,13 @@ public class AppConfiguration {
     samClient.setBasePath(properties.getSamInspectorProperties().samUrl());
     // return a simple resolver that uses the configuration value.
     return new SamResourceClient(
-        properties.getSamInspectorProperties().samResourceId(), samClient, new TokenChecker());
+        properties.getSamInspectorProperties().samResourceId(), samClient, tokenChecker);
   }
 
   @Bean
   public RelayedHttpRequestProcessor relayedHttpRequestProcessor(TargetResolver targetResolver) {
-    return new RelayedHttpRequestProcessor(targetResolver, properties.getCorsSupportProperties());
+    return new RelayedHttpRequestProcessor(
+        targetResolver, properties.getCorsSupportProperties(), tokenChecker);
   }
 
   @Bean

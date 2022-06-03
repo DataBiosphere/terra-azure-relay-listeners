@@ -11,15 +11,19 @@ import org.springframework.cache.annotation.Cacheable;
 
 public class SamResourceClient {
   private final String samResourceId;
+  private final String samResourceType;
   private final TokenChecker tokenChecker;
   private final ApiClient samClient;
 
-  private final String SAM_RESOURCE_TYPE = "controlled-application-private-workspace-resource";
-
   private final Logger logger = LoggerFactory.getLogger(SamResourceClient.class);
 
-  public SamResourceClient(String samResourceId, ApiClient samClient, TokenChecker tokenChecker) {
+  public SamResourceClient(
+      String samResourceId,
+      String samResourceType,
+      ApiClient samClient,
+      TokenChecker tokenChecker) {
     this.samResourceId = samResourceId;
+    this.samResourceType = samResourceType;
     this.tokenChecker = tokenChecker;
     this.samClient = samClient;
   }
@@ -34,7 +38,7 @@ public class SamResourceClient {
         samClient.setAccessToken(accessToken);
         var resourceApi = new ResourcesApi(samClient);
 
-        var res = resourceApi.resourcePermissionV2(SAM_RESOURCE_TYPE, samResourceId, "write");
+        var res = resourceApi.resourcePermissionV2(samResourceType, samResourceId, "write");
         if (res) return oauthInfo.expiresAt().get();
         else {
           logger.error("unauthorized request");

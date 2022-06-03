@@ -28,7 +28,8 @@ class SamResourceClientTest {
 
   @BeforeEach
   void setUp() throws IOException, InterruptedException, ApiException {
-    samResourceClient = new SamResourceClient("resourceId", apiClient, tokenChecker);
+    samResourceClient =
+        new SamResourceClient("resourceId", "resourceType", apiClient, tokenChecker);
   }
 
   @Test

@@ -2,6 +2,7 @@ package org.broadinstitute.listener.relay;
 
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 
@@ -17,7 +18,7 @@ public class Utils {
         .map(s -> s.replaceFirst("Bearer ", "").trim());
   }
 
-  public static boolean isSetCookiePath(java.net.URI uri) {
+  public static boolean isSetCookiePath(URI uri) {
     var splitted = uri.getPath().split("/");
     if (splitted.length == 3) return splitted[2].equals(SET_COOKIE_API_PATH);
     else return false;

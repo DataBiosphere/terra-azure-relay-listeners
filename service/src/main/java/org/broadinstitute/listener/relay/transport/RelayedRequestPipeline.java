@@ -78,6 +78,8 @@ public class RelayedRequestPipeline {
         .receiveRelayedHttpRequests()
         .filter(c -> listenerConnectionHandler.isNotPreflight(c.getRequest()))
         .doOnDiscard(RelayedHttpListenerContext.class, httpRequestProcessor::writePreflightResponse)
+        .filter(c -> listenerConnectionHandler.isNotSetCookie(c.getRequest()))
+        .doOnDiscard(RelayedHttpListenerContext.class, httpRequestProcessor::writeSetCookieResponse)
         .filter(
             c -> listenerConnectionHandler.isRelayedHttpRequestAcceptedByInspectors(c.getRequest()))
         .doOnDiscard(

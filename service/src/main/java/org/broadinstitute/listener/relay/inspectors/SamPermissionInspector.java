@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import org.broadinstitute.listener.relay.Utils;
 import org.broadinstitute.listener.relay.inspectors.InspectorType.InspectorNameConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +56,7 @@ public class SamPermissionInspector implements RequestInspector {
   }
 
   protected Optional<String> getToken(Map<String, String> headers) {
-    return getTokenFromCookie(headers).or(() -> getTokenFromAuthorization(headers));
+    return getTokenFromCookie(headers).or(() -> Utils.getTokenFromAuthorization(headers));
   }
 
   protected Optional<String> getTokenFromCookie(Map<String, String> headers) {
@@ -65,13 +66,8 @@ public class SamPermissionInspector implements RequestInspector {
         Optional.ofNullable(cookieValue).map(s -> s.split(";")).orElse(new String[0]);
 
     return Arrays.stream(splitted)
-        .filter(s -> s.contains("LeoToken="))
+        .filter(s -> s.contains(String.format("%s=", Utils.TOKEN_NAME)))
         .findFirst()
         .map(s -> s.split("=")[1]);
-  }
-
-  protected Optional<String> getTokenFromAuthorization(Map<String, String> headers) {
-    var authValue = headers.getOrDefault("Authorization", null);
-    return Optional.ofNullable(authValue).map(s -> s.replaceFirst("Bearer ", "").trim());
   }
 }

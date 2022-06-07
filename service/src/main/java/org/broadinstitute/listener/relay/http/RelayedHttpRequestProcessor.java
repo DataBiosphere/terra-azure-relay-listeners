@@ -5,6 +5,7 @@ import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_MAX_AGE;
+import static com.google.common.net.HttpHeaders.SET_COOKIE;
 
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
 import com.microsoft.azure.relay.RelayedHttpListenerResponse;
@@ -16,10 +17,14 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Instant;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.broadinstitute.listener.config.CorsSupportProperties;
+import org.broadinstitute.listener.relay.Utils;
+import org.broadinstitute.listener.relay.inspectors.TokenChecker;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,22 +36,29 @@ public class RelayedHttpRequestProcessor {
   private final TargetResolver targetHostResolver;
   private final CorsSupportProperties corsSupportProperties;
 
+  private final TokenChecker tokenChecker;
+
   protected final Logger logger = LoggerFactory.getLogger(RelayedHttpRequestProcessor.class);
 
   public RelayedHttpRequestProcessor(
-      @NonNull TargetResolver targetHostResolver, CorsSupportProperties corsSupportProperties) {
+      @NonNull TargetResolver targetHostResolver,
+      CorsSupportProperties corsSupportProperties,
+      TokenChecker tokenChecker) {
     this.httpClient = HttpClient.newBuilder().version(Version.HTTP_1_1).build();
     this.targetHostResolver = targetHostResolver;
     this.corsSupportProperties = corsSupportProperties;
+    this.tokenChecker = tokenChecker;
   }
 
   public RelayedHttpRequestProcessor(
       HttpClient httpClient,
       @NonNull TargetResolver targetHostResolver,
-      CorsSupportProperties corsSupportProperties) {
+      CorsSupportProperties corsSupportProperties,
+      TokenChecker tokenChecker) {
     this.httpClient = httpClient;
     this.targetHostResolver = targetHostResolver;
     this.corsSupportProperties = corsSupportProperties;
+    this.tokenChecker = tokenChecker;
   }
 
   public TargetHttpResponse executeRequestOnTarget(RelayedHttpListenerContext requestContext) {
@@ -126,6 +138,45 @@ public class RelayedHttpRequestProcessor {
       logger.error("Failed to close response body to the remote client.", e);
       return Result.FAILURE;
     }
+    return Result.SUCCESS;
+  }
+
+  public Result writeSetCookieResponse(RelayedHttpListenerContext context) {
+    if (context.getResponse() == null) {
+      logger.error("The context did not have a valid response");
+      return Result.FAILURE;
+    }
+
+    var authToken = Utils.getTokenFromAuthorization(context.getRequest().getHeaders());
+    if (authToken.isEmpty()) return Result.FAILURE;
+    else {
+      try {
+        var oauthInfo = tokenChecker.getOauthInfo(authToken.get());
+
+        var now = Instant.now();
+        Optional<Long> expiresIn =
+            oauthInfo.expiresAt().map(i -> i.getEpochSecond() - now.getEpochSecond());
+
+        RelayedHttpListenerResponse listenerResponse = context.getResponse();
+        listenerResponse.setStatusCode(204);
+
+        listenerResponse
+            .getHeaders()
+            .put(
+                SET_COOKIE,
+                String.format(
+                    "%s=%s; Max-Age=%s; Path=/; Secure; SameSite=None",
+                    Utils.TOKEN_NAME, authToken.get(), expiresIn.orElse(0L)));
+        listenerResponse.getOutputStream().close();
+      } catch (IOException e) {
+        logger.error("Failed to close response body to the remote client.", e);
+        return Result.FAILURE;
+      } catch (InterruptedException e) {
+        logger.error("Fail to Decode token", e);
+        return Result.FAILURE;
+      }
+    }
+
     return Result.SUCCESS;
   }
 

@@ -108,5 +108,3 @@ An inspector can be enabled by adding its name to the `requestInspectors` list i
 - `Host` and `Via` HTTP headers are not forwarded to the private endpoint.
 - WebSocket connections must target a specific URI pattern:
   - wss://<RELAY_HOST>/$hc/<HYBRID_CONNECTION_NAME>
-
-

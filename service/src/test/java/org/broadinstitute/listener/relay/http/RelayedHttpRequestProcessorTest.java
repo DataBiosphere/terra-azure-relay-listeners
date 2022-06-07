@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.broadinstitute.listener.config.CorsSupportProperties;
 import org.broadinstitute.listener.relay.InvalidRelayTargetException;
+import org.broadinstitute.listener.relay.inspectors.TokenChecker;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -78,7 +79,10 @@ class RelayedHttpRequestProcessorTest {
     requestHeaders.put("REQ_HEADER", "REQ_VALUE");
     processor =
         new RelayedHttpRequestProcessor(
-            httpClient, targetHostResolver, new CorsSupportProperties("dummy", "dummy", "dummy"));
+            httpClient,
+            targetHostResolver,
+            new CorsSupportProperties("dummy", "dummy", "dummy"),
+            new TokenChecker());
   }
 
   @Test

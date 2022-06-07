@@ -42,5 +42,11 @@ class UtilTest {
             "https://relay-ns-995014ac-a05d-477e-9a75-1aa10bd5def5.servicebus.windows.net/saturn-4c90d242-dc9d-4d26-b858-4b7c73a97efc/setCookie/");
     var res3 = Utils.isSetCookiePath(uri3);
     assertThat(res3, equalTo(true));
+
+    var uri4 =
+        URI.create(
+            "https://relay-ns-995014ac-a05d-477e-9a75-1aa10bd5def5.servicebus.windows.net/saturn-4c90d242-dc9d-4d26-b858-4b7c73a97efc/setcookie");
+    var res4 = Utils.isSetCookiePath(uri4);
+    assertThat(res4, equalTo(true));
   }
 }

@@ -35,7 +35,7 @@ that have write access to a specific Sam resource.
 `listener.samInspectorProperties.samResourceId`: The id of the Sam resource to check access to
 
 `listener.samInspectorProperties.samResourceType`: The type of the Sam resource to check access to.
-Defaults to `controlled-application-private-workspace-resource`, which corresponds to Jupyter Notebooks.
+Defaults to `controlled-application-private-workspace-resource`, which corresponds Leo-managed resources.
 
 ## Running Jupyter Notebooks
 
@@ -44,7 +44,7 @@ the following configuration settings are required.
 
 `c.NotebookApp.allow_origin = '*'`
 
-*Note*: You could add an specific Azure Relay origin if required.
+*Note*: You could add a specific Azure Relay origin if required.
 
 `c.NotebookApp.base_url = '/<HYBRID CONNECTION NAME>/'`
 

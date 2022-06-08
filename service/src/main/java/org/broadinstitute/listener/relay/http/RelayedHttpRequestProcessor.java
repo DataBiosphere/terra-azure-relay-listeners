@@ -221,16 +221,15 @@ public class RelayedHttpRequestProcessor {
     return result;
   }
 
-  private void writeCORSHeaders(RelayedHttpListenerResponse listenerResponse, RelayedHttpListenerRequest request) {
+  private void writeCORSHeaders(
+      RelayedHttpListenerResponse listenerResponse, RelayedHttpListenerRequest request) {
     listenerResponse
         .getHeaders()
         .put(ACCESS_CONTROL_ALLOW_METHODS, corsSupportProperties.preflightMethods());
 
     listenerResponse
         .getHeaders()
-        .put(
-            ACCESS_CONTROL_ALLOW_ORIGIN,
-            request.getHeaders().getOrDefault("Origin", "*"));
+        .put(ACCESS_CONTROL_ALLOW_ORIGIN, request.getHeaders().getOrDefault("Origin", "*"));
 
     listenerResponse.getHeaders().put(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
     listenerResponse

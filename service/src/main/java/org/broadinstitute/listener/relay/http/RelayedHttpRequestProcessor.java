@@ -8,6 +8,7 @@ import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_MAX_AGE;
 import static com.google.common.net.HttpHeaders.SET_COOKIE;
 
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
+import com.microsoft.azure.relay.RelayedHttpListenerRequest;
 import com.microsoft.azure.relay.RelayedHttpListenerResponse;
 import java.io.IOException;
 import java.io.InputStream;
@@ -117,21 +118,8 @@ public class RelayedHttpRequestProcessor {
 
     RelayedHttpListenerResponse listenerResponse = context.getResponse();
     listenerResponse.setStatusCode(204);
-    listenerResponse
-        .getHeaders()
-        .put(ACCESS_CONTROL_ALLOW_METHODS, corsSupportProperties.preflightMethods());
+    writeCORSHeaders(listenerResponse, context.getRequest());
 
-    listenerResponse
-        .getHeaders()
-        .put(
-            ACCESS_CONTROL_ALLOW_ORIGIN,
-            context.getRequest().getHeaders().getOrDefault("Origin", "*"));
-
-    listenerResponse.getHeaders().put(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
-    listenerResponse
-        .getHeaders()
-        .put(ACCESS_CONTROL_ALLOW_HEADERS, corsSupportProperties.allowHeaders());
-    listenerResponse.getHeaders().put(ACCESS_CONTROL_MAX_AGE, corsSupportProperties.maxAge());
     try {
       listenerResponse.getOutputStream().close();
     } catch (IOException e) {
@@ -167,6 +155,9 @@ public class RelayedHttpRequestProcessor {
                 String.format(
                     "%s=%s; Max-Age=%s; Path=/; Secure; SameSite=None",
                     Utils.TOKEN_NAME, authToken.get(), expiresIn.orElse(0L)));
+
+        writeCORSHeaders(listenerResponse, context.getRequest());
+
         listenerResponse.getOutputStream().close();
       } catch (IOException e) {
         logger.error("Failed to close response body to the remote client.", e);
@@ -228,6 +219,24 @@ public class RelayedHttpRequestProcessor {
     }
 
     return result;
+  }
+
+  private void writeCORSHeaders(RelayedHttpListenerResponse listenerResponse, RelayedHttpListenerRequest request) {
+    listenerResponse
+        .getHeaders()
+        .put(ACCESS_CONTROL_ALLOW_METHODS, corsSupportProperties.preflightMethods());
+
+    listenerResponse
+        .getHeaders()
+        .put(
+            ACCESS_CONTROL_ALLOW_ORIGIN,
+            request.getHeaders().getOrDefault("Origin", "*"));
+
+    listenerResponse.getHeaders().put(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+    listenerResponse
+        .getHeaders()
+        .put(ACCESS_CONTROL_ALLOW_HEADERS, corsSupportProperties.allowHeaders());
+    listenerResponse.getHeaders().put(ACCESS_CONTROL_MAX_AGE, corsSupportProperties.maxAge());
   }
 
   private void removeHeadersNotAcceptedByAzureRelay(Map<String, String> headers) {

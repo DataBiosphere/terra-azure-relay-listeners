@@ -25,6 +25,18 @@ The Terra Azure Relay Listener establishes a bi-directional channel with Azure R
 
 `listener.corsSupportProperties.preflightMethods` Methods that we support CORS. Default to `OPTIONS, POST, PUT, GET, DELETE, HEAD, PATCH`.
 
+### Sam Inspector config options
+
+By using the Sam Checker inspector, the Listener can be configured to allow access only for users
+that have write access to a specific Sam resource.
+
+`listener.samInspectorProperties.samUrl`: URL to the Sam instance we should talk to
+
+`listener.samInspectorProperties.samResourceId`: The id of the Sam resource to check access to
+
+`listener.samInspectorProperties.samResourceType`: The type of the Sam resource to check access to.
+Defaults to `controlled-application-private-workspace-resource`, which corresponds Leo-managed resources.
+
 ## Running Jupyter Notebooks
 
 To enable access to a Jupyter Notebooks server instance via Azure Relay using the listener,
@@ -32,7 +44,7 @@ the following configuration settings are required.
 
 `c.NotebookApp.allow_origin = '*'`
 
-*Note*: You could add an specific Azure Relay origin if required.
+*Note*: You could add a specific Azure Relay origin if required.
 
 `c.NotebookApp.base_url = '/<HYBRID CONNECTION NAME>/'`
 
@@ -51,7 +63,6 @@ c.ServerApp.base_url = '/qi-2-16/'
 c.ServerApp.websocket_url = 'wss://qi-relay.servicebus.windows.net/$hc/qi-2-16'
 ```
 ## Request Inspectors
-
 
 The listener enables the inspection of the relayed HTTP requests.
 HTTP requests could be accepted or rejected after being inspected.
@@ -76,11 +87,6 @@ public interface RequestInspector {
 - `inspectWebSocketUpgradeRequest` is called before the listener accepts the relayed WebSocket connection.
   If the implementation returns `false`, the listener will deny the WebSocket upgrade request.
   Azure Relay expects a response in less than 30 seconds; if an inspector blocks the requests for longer than that, the client will receive a timeout.
-
-
-
-
-
 
  - The implementation must be a named component, e.g.:
 

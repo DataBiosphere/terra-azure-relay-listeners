@@ -40,7 +40,10 @@ public class AppConfiguration {
     samClient.setBasePath(properties.getSamInspectorProperties().samUrl());
     // return a simple resolver that uses the configuration value.
     return new SamResourceClient(
-        properties.getSamInspectorProperties().samResourceId(), samClient, tokenChecker);
+        properties.getSamInspectorProperties().samResourceId(),
+        properties.getSamInspectorProperties().samResourceType(),
+        samClient,
+        tokenChecker);
   }
 
   @Bean

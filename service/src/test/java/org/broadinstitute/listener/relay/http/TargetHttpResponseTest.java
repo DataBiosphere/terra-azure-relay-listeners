@@ -12,6 +12,7 @@ import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.broadinstitute.listener.config.CorsSupportProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,7 +54,8 @@ class TargetHttpResponseTest {
     when(trackingContext.getTrackingId()).thenReturn("123abc");
 
     targetHttpResponse =
-        targetHttpResponse.createTargetHttpResponseFromException(500, exception, context);
+        targetHttpResponse.createTargetHttpResponseFromException(
+            500, exception, context, new CorsSupportProperties("", "", " ", ""));
     assertThat(targetHttpResponse.getStatusCode(), equalTo(500));
     assertThat(targetHttpResponse.getStatusDescription(), equalTo(ERR_MSG));
     assertThat(targetHttpResponse.getBody().isPresent(), equalTo(true));
@@ -66,7 +68,9 @@ class TargetHttpResponseTest {
     when(httpResponse.headers()).thenReturn(httpHeaders);
     when(httpResponse.statusCode()).thenReturn(200);
 
-    targetHttpResponse = targetHttpResponse.createTargetHttpResponse(httpResponse, context);
+    targetHttpResponse =
+        targetHttpResponse.createTargetHttpResponse(
+            httpResponse, context, new CorsSupportProperties("", "", " ", ""));
     assertThat(targetHttpResponse.getStatusCode(), equalTo(200));
     assertThat(targetHttpResponse.getBody().get(), equalTo(body));
     assertThat(targetHttpResponse.getHeaders().get().keySet(), equalTo(headers.keySet()));

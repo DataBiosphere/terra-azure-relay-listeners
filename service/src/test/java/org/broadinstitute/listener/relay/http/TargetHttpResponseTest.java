@@ -1,5 +1,6 @@
 package org.broadinstitute.listener.relay.http;
 
+import static com.google.common.net.HttpHeaders.CONTENT_SECURITY_POLICY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.when;
@@ -73,6 +74,7 @@ class TargetHttpResponseTest {
             httpResponse, context, new CorsSupportProperties("", "", " ", ""));
     assertThat(targetHttpResponse.getStatusCode(), equalTo(200));
     assertThat(targetHttpResponse.getBody().get(), equalTo(body));
+    headers.put(CONTENT_SECURITY_POLICY, List.of("dummy"));
     assertThat(targetHttpResponse.getHeaders().get().keySet(), equalTo(headers.keySet()));
     assertThat(targetHttpResponse.getContext(), equalTo(context));
   }

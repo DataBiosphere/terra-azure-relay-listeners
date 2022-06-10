@@ -5,6 +5,7 @@ import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_MAX_AGE;
+import static com.google.common.net.HttpHeaders.CONTENT_SECURITY_POLICY;
 import static com.google.common.net.HttpHeaders.SET_COOKIE;
 
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
@@ -73,7 +74,8 @@ public class RelayedHttpRequestProcessor {
 
       clientResponse = httpClient.send(localRequest, HttpResponse.BodyHandlers.ofInputStream());
 
-      return TargetHttpResponse.createTargetHttpResponse(clientResponse, request.getContext());
+      return TargetHttpResponse.createTargetHttpResponse(
+          clientResponse, request.getContext(), corsSupportProperties);
 
     } catch (Throwable ex) {
 
@@ -234,6 +236,9 @@ public class RelayedHttpRequestProcessor {
     listenerResponse.getHeaders().put(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
     listenerResponse
         .getHeaders()
+        .put(CONTENT_SECURITY_POLICY, corsSupportProperties.contentSecurityPolicy());
+    listenerResponse
+        .getHeaders()
         .put(ACCESS_CONTROL_ALLOW_HEADERS, corsSupportProperties.allowHeaders());
     listenerResponse.getHeaders().put(ACCESS_CONTROL_MAX_AGE, corsSupportProperties.maxAge());
   }
@@ -251,7 +256,8 @@ public class RelayedHttpRequestProcessor {
             "Relayed request failed. Tracking ID:%s",
             context.getTrackingContext().getTrackingId());
     logger.error(message, exception);
-    return TargetHttpResponse.createTargetHttpResponseFromException(500, exception, context);
+    return TargetHttpResponse.createTargetHttpResponseFromException(
+        500, exception, context, corsSupportProperties);
   }
 
   private HttpRequest toClientHttpRequest(RelayedHttpRequest request) throws URISyntaxException {

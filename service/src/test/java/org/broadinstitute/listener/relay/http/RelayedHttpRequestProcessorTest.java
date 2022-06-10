@@ -1,5 +1,6 @@
 package org.broadinstitute.listener.relay.http;
 
+import static com.google.common.net.HttpHeaders.CONTENT_SECURITY_POLICY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
@@ -81,7 +82,7 @@ class RelayedHttpRequestProcessorTest {
         new RelayedHttpRequestProcessor(
             httpClient,
             targetHostResolver,
-            new CorsSupportProperties("dummy", "dummy", "dummy"),
+            new CorsSupportProperties("dummy", "dummy", "dummy", "dummy"),
             new TokenChecker());
   }
 
@@ -99,6 +100,7 @@ class RelayedHttpRequestProcessorTest {
     String data = new String(response.getBody().get().readAllBytes());
 
     assertThat(response.getStatusCode(), equalTo(200));
+    targetResponseHeaders.put(CONTENT_SECURITY_POLICY, List.of("dummy"));
     assertThat(response.getHeaders().get().keySet(), equalTo(targetResponseHeaders.keySet()));
     assertThat(data, equalTo(BODY_CONTENT));
   }

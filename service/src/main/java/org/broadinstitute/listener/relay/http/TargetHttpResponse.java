@@ -1,6 +1,7 @@
 package org.broadinstitute.listener.relay.http;
 
 import static com.google.common.net.HttpHeaders.CONTENT_SECURITY_POLICY;
+import static com.google.common.net.HttpHeaders.SET_COOKIE;
 
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
 import java.io.ByteArrayInputStream;
@@ -94,7 +95,13 @@ public class TargetHttpResponse extends HttpMessage {
               (key, value) -> {
                 String headerValue = value.iterator().next();
                 if (!key.equalsIgnoreCase(CONTENT_SECURITY_POLICY)) {
-                  responseHeaders.put(key, headerValue);
+                  if (key.equalsIgnoreCase(SET_COOKIE)) {
+                    // setcookie response from jupyter lab looks like this: set-cookie:
+                    // _xsrf=2|63084c74|2d3173085f60f5a3889e8c1e1879d0a6|1654868473; expires=Sun, 10
+                    // Jul 2022 13:41:13 GMT; Path=/saturn-403635c5-c58b-4bcd-b3d1-55aa5bd8919d/
+                    var cookieValue = String.format("%s; Secure; SameSite=None", headerValue);
+                    responseHeaders.put(key, cookieValue);
+                  } else responseHeaders.put(key, headerValue);
                 }
               });
 

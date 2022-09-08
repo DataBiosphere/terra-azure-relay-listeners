@@ -56,12 +56,6 @@ class DefaultTargetResolverTest {
   }
 
   @Test
-  void resolveTargetHost_returnsConfigurationValue() {
-    assertThat(
-        resolver.resolveTargetHost(), equalTo(properties.getTargetProperties().getTargetHost()));
-  }
-
-  @Test
   void createTargetWebSocketUri_requestWithPathAndQueryNoEntityPath()
       throws URISyntaxException, InvalidRelayTargetException {
     URI relayRequest = createRelayRequest(TARGET_PATH, TARGET_QS, false);

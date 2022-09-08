@@ -31,12 +31,6 @@ public class DefaultTargetResolver implements TargetResolver {
   }
 
   @Override
-  public String resolveTargetHost() {
-
-    return defaultTargetHost;
-  }
-
-  @Override
   public URI createTargetWebSocketUri(@NonNull URI relayedRequestUri)
       throws InvalidRelayTargetException {
     URL targetUrl =

@@ -25,7 +25,7 @@ The Terra Azure Relay Listener establishes a bi-directional channel with Azure R
 
 `listener.corsSupportProperties.preflightMethods` Methods that we support CORS. Default to `OPTIONS, POST, PUT, GET, DELETE, HEAD, PATCH`.
 
-`listener.targetProperties.targetRoutingRules` As list of target routing rules. A rule is a tuple of the string to look in the URI and the target host.
+`listener.targetProperties.targetRoutingRules` A list of routing rules. A rule is a tuple of the string the URI must contain for a match and the target host.
 The default `targetHost` is used. Example configuration:
 
 ```yaml

@@ -3,11 +3,14 @@ package org.broadinstitute.listener.relay.transport;
 import java.net.URI;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.broadinstitute.listener.config.ListenerProperties;
+import org.broadinstitute.listener.config.TargetRoutingRule;
 import org.broadinstitute.listener.relay.InvalidRelayTargetException;
 import org.springframework.lang.NonNull;
 import org.springframework.web.util.UriUtils;
@@ -15,7 +18,7 @@ import org.springframework.web.util.UriUtils;
 public class DefaultTargetResolver implements TargetResolver {
   private static final String WS_HC_SEGMENT = "/$hc";
 
-  private final String targetHost;
+  private final String defaultTargetHost;
   private final ListenerProperties properties;
 
   public DefaultTargetResolver(ListenerProperties properties) {
@@ -24,13 +27,13 @@ public class DefaultTargetResolver implements TargetResolver {
         || StringUtils.isBlank(properties.getTargetProperties().getTargetHost())) {
       throw new IllegalStateException("The target host configuration is missing.");
     }
-    targetHost = properties.getTargetProperties().getTargetHost();
+    defaultTargetHost = properties.getTargetProperties().getTargetHost();
   }
 
   @Override
   public String resolveTargetHost() {
 
-    return targetHost;
+    return defaultTargetHost;
   }
 
   @Override
@@ -59,6 +62,23 @@ public class DefaultTargetResolver implements TargetResolver {
         relayedRequestUri, properties.getTargetProperties().isRemoveEntityPathFromHttpUrl());
   }
 
+  private String resolveTargetHostUsingRules(@NonNull URI relayedRequestUri) {
+    List<TargetRoutingRule> rules = properties.getTargetProperties().getTargetRoutingRules();
+    if (rules == null || rules.size() == 0) {
+      return defaultTargetHost;
+    }
+    Optional<String> ruleTargetHost =
+        rules.stream()
+            .filter(r -> relayedRequestUri.toString().contains(r.pathContains()))
+            .map(r -> r.targetHost())
+            .findFirst();
+
+    if (ruleTargetHost.isPresent()) {
+      return ruleTargetHost.get();
+    }
+    return defaultTargetHost;
+  }
+
   private URL createTargetUrl(URI relayedRequestUri, boolean removeEntityPath)
       throws InvalidRelayTargetException {
 
@@ -67,7 +87,7 @@ public class DefaultTargetResolver implements TargetResolver {
 
     // remove trailing slash from the host and the leading slash for the path
     path = StringUtils.stripStart(path, "/");
-    String host = StringUtils.stripEnd(targetHost, "/");
+    String host = StringUtils.stripEnd(resolveTargetHostUsingRules(relayedRequestUri), "/");
 
     String query = "";
     if (StringUtils.isNotBlank(relayedRequestUri.getQuery())) {

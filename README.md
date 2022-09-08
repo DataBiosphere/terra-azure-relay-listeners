@@ -17,7 +17,7 @@ The Terra Azure Relay Listener establishes a bi-directional channel with Azure R
 
 `relayConnectionName`: Hybrid Connection name. Must the same value as the EntityPath.
 
-`listener.targetProperties.targetHost`: The local or private endpoint where the listener must forward all requests.
+`listener.targetProperties.targetHost`: The default local or private endpoint where the listener must forward all requests.
 
 `requestInspectors`: A list of request inspectors to be enabled.
 
@@ -25,6 +25,17 @@ The Terra Azure Relay Listener establishes a bi-directional channel with Azure R
 
 `listener.corsSupportProperties.preflightMethods` Methods that we support CORS. Default to `OPTIONS, POST, PUT, GET, DELETE, HEAD, PATCH`.
 
+`listener.targetProperties.targetRoutingRules` As list of target routing rules. A rule is a tuple of the string to look in the URI and the target host.
+The default `targetHost` is used. Example configuration:
+
+```yaml
+  targetProperties:
+    targetHost: "http://localhost:8080"
+    targetRoutingRules:
+      -
+        pathContains: "welder"
+        targetHost: "http://localhsot:8081"
+```
 ### Sam Inspector config options
 
 By using the Sam Checker inspector, the Listener can be configured to allow access only for users

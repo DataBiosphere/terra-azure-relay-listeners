@@ -1,9 +1,12 @@
 package org.broadinstitute.listener.config;
 
+import java.util.List;
+
 public class TargetProperties {
   private boolean removeEntityPathFromWssUri = false;
   private boolean removeEntityPathFromHttpUrl = false;
   private String targetHost;
+  private List<TargetRoutingRule> targetRoutingRules;
 
   public boolean isRemoveEntityPathFromWssUri() {
     return removeEntityPathFromWssUri;
@@ -27,5 +30,13 @@ public class TargetProperties {
 
   public void setRemoveEntityPathFromHttpUrl(boolean removeEntityPathFromHttpUrl) {
     this.removeEntityPathFromHttpUrl = removeEntityPathFromHttpUrl;
+  }
+
+  public List<TargetRoutingRule> getTargetRoutingRules() {
+    return targetRoutingRules;
+  }
+
+  public void setTargetRoutingRules(List<TargetRoutingRule> targetRoutingRules) {
+    this.targetRoutingRules = targetRoutingRules;
   }
 }

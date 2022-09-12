@@ -7,8 +7,6 @@ import org.springframework.lang.NonNull;
 
 public interface TargetResolver {
 
-  String resolveTargetHost();
-
   URL createTargetUrl(@NonNull URI relayedRequestUri) throws InvalidRelayTargetException;
 
   URI createTargetWebSocketUri(@NonNull URI relayedRequestUri) throws InvalidRelayTargetException;

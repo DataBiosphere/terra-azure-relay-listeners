@@ -11,17 +11,21 @@ import java.util.List;
 import org.apache.http.client.utils.URIBuilder;
 import org.broadinstitute.listener.config.ListenerProperties;
 import org.broadinstitute.listener.config.TargetProperties;
+import org.broadinstitute.listener.config.TargetRoutingRule;
 import org.broadinstitute.listener.relay.InvalidRelayTargetException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.util.UriUtils;
 
-@ExtendWith(MockitoExtension.class)
 class DefaultTargetResolverTest {
 
   private static final String TARGET_HOST = "localhost:8080";
+
+  private static final String RULE_TARGET_HOST = "localhost:8081";
+  private static final String RULE_TARGET_URL = "http://localhost:8081";
+
+  private static final String RULE_CONTAINS = "mzt";
+
   private static final String TARGET_HOST_HTTPS = "https://localhost:8080/";
 
   private static final String RELAY_HOST = "tom.foo.com";
@@ -44,13 +48,9 @@ class DefaultTargetResolverTest {
     properties = new ListenerProperties();
     properties.setTargetProperties(new TargetProperties());
     properties.getTargetProperties().setTargetHost("http://" + TARGET_HOST);
-    resolver = new DefaultTargetResolver(properties);
-  }
+    properties.setRelayConnectionName(HYBRID_CONN);
 
-  @Test
-  void resolveTargetHost_returnsConfigurationValue() {
-    assertThat(
-        resolver.resolveTargetHost(), equalTo(properties.getTargetProperties().getTargetHost()));
+    resolver = new DefaultTargetResolver(properties);
   }
 
   @Test
@@ -83,6 +83,54 @@ class DefaultTargetResolverTest {
     URL target = resolver.createTargetUrl(relayRequest);
 
     assertThat(target.toString(), equalTo(getExpectedTargetUrl(TARGET_PATH)));
+    assertThat(target.toString().contains(HYBRID_CONN), equalTo(true));
+  }
+
+  @Test
+  void createTargetUrl_requestThatMatchesRuleAndRuleHasHCWildCard_returnsRuleUrlWithoutHC()
+      throws URISyntaxException, InvalidRelayTargetException {
+    URI relayRequest = createRelayRequest(RULE_CONTAINS, TARGET_QS, false);
+
+    properties
+        .getTargetProperties()
+        .setTargetRoutingRules(
+            List.of(
+                new TargetRoutingRule(
+                    RULE_CONTAINS, RULE_TARGET_URL, "$hc-name/" + RULE_CONTAINS)));
+
+    URL target = resolver.createTargetUrl(relayRequest);
+
+    assertThat(target.toString(), equalTo(String.format("%s/?%s", RULE_TARGET_URL, TARGET_QS)));
+  }
+
+  @Test
+  void createTargetUrl_requestThatMatchesRule_returnsRuleUrl()
+      throws URISyntaxException, InvalidRelayTargetException {
+    URI relayRequest = createRelayRequest(RULE_CONTAINS, TARGET_QS, false);
+
+    properties
+        .getTargetProperties()
+        .setTargetRoutingRules(List.of(new TargetRoutingRule(RULE_CONTAINS, RULE_TARGET_URL, "")));
+
+    URL target = resolver.createTargetUrl(relayRequest);
+
+    assertThat(target.toString(), equalTo(getExpectedRuleTargetUrl(RULE_CONTAINS)));
+    assertThat(target.toString().contains(HYBRID_CONN), equalTo(true));
+  }
+
+  @Test
+  void createTargetUrl_requestDoesNotMatchRule_returnsDefaultUrl()
+      throws URISyntaxException, InvalidRelayTargetException {
+    URI relayRequest = createRelayRequest(RULE_CONTAINS, TARGET_QS, false);
+
+    properties
+        .getTargetProperties()
+        .setTargetRoutingRules(
+            List.of(new TargetRoutingRule(RULE_CONTAINS + "invalid", RULE_TARGET_URL, "")));
+
+    URL target = resolver.createTargetUrl(relayRequest);
+
+    assertThat(target.toString(), equalTo(getExpectedTargetUrl(RULE_CONTAINS)));
     assertThat(target.toString().contains(HYBRID_CONN), equalTo(true));
   }
 
@@ -134,6 +182,10 @@ class DefaultTargetResolverTest {
 
   private String getExpectedTargetUrl(String path) {
     return String.format("http://%s/%s/%s?%s", TARGET_HOST, HYBRID_CONN, path, TARGET_QS);
+  }
+
+  private String getExpectedRuleTargetUrl(String path) {
+    return String.format("http://%s/%s/%s?%s", RULE_TARGET_HOST, HYBRID_CONN, path, TARGET_QS);
   }
 
   private String getExpectedTargetWsUri(String path) {

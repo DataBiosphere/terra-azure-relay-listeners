@@ -2,20 +2,16 @@ package org.broadinstitute.listener.relay.transport;
 
 import java.net.URI;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Locale;
-import java.util.stream.Collectors;
+import java.util.List;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.utils.URIBuilder;
 import org.broadinstitute.listener.config.ListenerProperties;
+import org.broadinstitute.listener.config.TargetRoutingRule;
 import org.broadinstitute.listener.relay.InvalidRelayTargetException;
 import org.springframework.lang.NonNull;
-import org.springframework.web.util.UriUtils;
 
 public class DefaultTargetResolver implements TargetResolver {
-  private static final String WS_HC_SEGMENT = "/$hc";
-
-  private final String targetHost;
+  public static final String HC_NAME_RULE_WILD_CARD = "$hc-name";
+  private final String defaultTargetHost;
   private final ListenerProperties properties;
 
   public DefaultTargetResolver(ListenerProperties properties) {
@@ -24,13 +20,7 @@ public class DefaultTargetResolver implements TargetResolver {
         || StringUtils.isBlank(properties.getTargetProperties().getTargetHost())) {
       throw new IllegalStateException("The target host configuration is missing.");
     }
-    targetHost = properties.getTargetProperties().getTargetHost();
-  }
-
-  @Override
-  public String resolveTargetHost() {
-
-    return targetHost;
+    defaultTargetHost = properties.getTargetProperties().getTargetHost();
   }
 
   @Override
@@ -59,37 +49,48 @@ public class DefaultTargetResolver implements TargetResolver {
         relayedRequestUri, properties.getTargetProperties().isRemoveEntityPathFromHttpUrl());
   }
 
+  private TargetRule resolveTargetRule(@NonNull URI relayedRequestUri, boolean removeEntityPath) {
+    List<TargetRoutingRule> rules = properties.getTargetProperties().getTargetRoutingRules();
+    if (rules == null || rules.size() == 0) {
+      return getDefaultRule(removeEntityPath);
+    }
+    return rules.stream()
+        .filter(r -> relayedRequestUri.toString().contains(r.pathContains()))
+        .map(this::createTargetRule)
+        .findFirst()
+        .orElse(getDefaultRule(removeEntityPath));
+  }
+
+  private TargetRule createTargetRule(TargetRoutingRule configurationRule) {
+
+    String segmentToRemove = replaceHybridConnWildCardWithConnectionName(configurationRule);
+
+    return new TargetRule(configurationRule.targetHost(), segmentToRemove);
+  }
+
+  private String replaceHybridConnWildCardWithConnectionName(TargetRoutingRule configurationRule) {
+    String segmentToRemove =
+        configurationRule
+            .removeFromPath()
+            .replace(HC_NAME_RULE_WILD_CARD, properties.getRelayConnectionName());
+    return segmentToRemove;
+  }
+
+  private TargetRule getDefaultRule(boolean removeEntityPath) {
+    String segmentsToRemove = "";
+    if (removeEntityPath) {
+      segmentsToRemove = properties.getRelayConnectionName();
+    }
+    return new TargetRule(defaultTargetHost, segmentsToRemove);
+  }
+
   private URL createTargetUrl(URI relayedRequestUri, boolean removeEntityPath)
       throws InvalidRelayTargetException {
 
-    // remove the WSS segment from the URI
-    String path = relayedRequestUri.getPath().replace(WS_HC_SEGMENT, "");
+    TargetRule rule = resolveTargetRule(relayedRequestUri, removeEntityPath);
 
-    // remove trailing slash from the host and the leading slash for the path
-    path = StringUtils.stripStart(path, "/");
-    String host = StringUtils.stripEnd(targetHost, "/");
+    TargetURIParser parser = new TargetURIParser(rule.targetHost(), relayedRequestUri);
 
-    String query = "";
-    if (StringUtils.isNotBlank(relayedRequestUri.getQuery())) {
-
-      query = "?" + relayedRequestUri.getQuery();
-    }
-
-    try {
-      path = UriUtils.encodePath(path, "UTF-8");
-      if (removeEntityPath) {
-        path = Arrays.stream(path.split("/")).skip(1).collect(Collectors.joining("/"));
-      }
-      URIBuilder builder = new URIBuilder(String.format(Locale.ROOT, "%s/%s%s", host, path, query));
-
-      return builder.build().toURL();
-    } catch (Exception e) {
-      throw new InvalidRelayTargetException(
-          String.format(
-              Locale.ROOT,
-              "The target URL could not be parsed. Request URI: %s",
-              relayedRequestUri),
-          e);
-    }
+    return parser.parseTargetHttpUrl(rule.segmentsToRemove());
   }
 }

@@ -11,7 +11,7 @@ listener:
   relayConnectionString:
   relayConnectionName:
   targetProperties:
-    targetHost: "http://localhost:8080"
+    targetHost:
     targetRoutingRules:
       -
         pathContains: "welder"

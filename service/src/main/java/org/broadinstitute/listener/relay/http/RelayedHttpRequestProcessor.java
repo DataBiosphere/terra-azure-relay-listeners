@@ -72,7 +72,7 @@ public class RelayedHttpRequestProcessor {
 
       HttpRequest localRequest = toClientHttpRequest(request);
 
-      logger.info("Local request: {}", localRequest.uri().toString());
+      logger.debug("Local request: {}", localRequest.uri().toString());
 
       clientResponse = httpClient.send(localRequest, HttpResponse.BodyHandlers.ofInputStream());
 

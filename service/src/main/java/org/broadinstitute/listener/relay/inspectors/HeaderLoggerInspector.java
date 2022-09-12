@@ -21,7 +21,7 @@ public class HeaderLoggerInspector implements RequestInspector {
   public boolean inspectWebSocketUpgradeRequest(
       @NonNull RelayedHttpListenerRequest relayedHttpListenerRequest) {
 
-    logger.info("WebSocket Upgrade Request: {}", relayedHttpListenerRequest.getUri());
+    logger.debug("WebSocket Upgrade Request: {}", relayedHttpListenerRequest.getUri());
 
     logHeaders(relayedHttpListenerRequest.getHeaders());
 
@@ -32,7 +32,7 @@ public class HeaderLoggerInspector implements RequestInspector {
   public boolean inspectRelayedHttpRequest(
       @NonNull RelayedHttpListenerRequest relayedHttpListenerRequest) {
 
-    logger.info("HTTP Request: {}", relayedHttpListenerRequest.getUri());
+    logger.debug("HTTP Request: {}", relayedHttpListenerRequest.getUri());
 
     logHeaders(relayedHttpListenerRequest.getHeaders());
 
@@ -50,7 +50,7 @@ public class HeaderLoggerInspector implements RequestInspector {
       if (isMaskedValue(header.getKey())) {
         value = "*******";
       }
-      logger.info("Header: {} Value:{}", header.getKey(), value);
+      logger.debug("Header: {} Value:{}", header.getKey(), value);
     }
   }
 

@@ -36,16 +36,14 @@ public class RelayedRequestPipeline {
   }
 
   public void processRelayedRequests() {
-    logger.info("Starting Relay Listener Processor");
-
-    logger.info("Registering HTTP pipeline");
+    logger.debug("Registering HTTP pipeline");
     registerHttpExecutionPipeline();
 
-    logger.info("Registering WebSocket upgrades pipeline");
+    logger.debug("Registering WebSocket upgrades pipeline");
     webSocketConnectionsHandler
         .acceptHttpUpgradeRequests()
         .subscribe(
-            request -> logger.info("Accepted request. Target URI:{}", request.getTargetUrl()));
+            request -> logger.debug("Accepted request. Target URI:{}", request.getTargetUrl()));
 
     openListenerConnection();
   }

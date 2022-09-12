@@ -69,7 +69,7 @@ public class ListenerConnectionHandler {
             listener.setRequestHandler(
                 context -> {
                   try {
-                    logger.info(
+                    logger.debug(
                         "Received HTTP request. URI: {}. Tracking ID:{}",
                         context.getRequest().getUri(),
                         context.getTrackingContext().getTrackingId());
@@ -86,7 +86,7 @@ public class ListenerConnectionHandler {
   public Mono<String> openConnection() {
     return Mono.create(
         sink -> {
-          logger.info("Opening connection to Azure Relay.");
+          logger.debug("Opening connection to Azure Relay.");
           listener
               .openAsync()
               .whenComplete(
@@ -105,7 +105,7 @@ public class ListenerConnectionHandler {
   public Mono<String> closeConnection() {
     return Mono.create(
         sink -> {
-          logger.info("Closing connection to Azure Relay.");
+          logger.debug("Closing connection to Azure Relay.");
           listener
               .closeAsync()
               .whenComplete(

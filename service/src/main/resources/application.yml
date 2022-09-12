@@ -11,7 +11,12 @@ listener:
   relayConnectionString:
   relayConnectionName:
   targetProperties:
-    targetHost:
+    targetHost: "http://localhost:8080"
+    targetRoutingRules:
+      -
+        pathContains: "welder"
+        targetHost: "http://localhost:8081"
+        removeFromPath: "$hc-name/welder"
   requestInspectors:
 #    - headersLogger
     - samChecker

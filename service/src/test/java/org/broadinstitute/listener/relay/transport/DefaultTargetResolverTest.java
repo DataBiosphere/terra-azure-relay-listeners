@@ -15,11 +15,8 @@ import org.broadinstitute.listener.config.TargetRoutingRule;
 import org.broadinstitute.listener.relay.InvalidRelayTargetException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.util.UriUtils;
 
-@ExtendWith(MockitoExtension.class)
 class DefaultTargetResolverTest {
 
   private static final String TARGET_HOST = "localhost:8080";
@@ -51,6 +48,7 @@ class DefaultTargetResolverTest {
     properties = new ListenerProperties();
     properties.setTargetProperties(new TargetProperties());
     properties.getTargetProperties().setTargetHost("http://" + TARGET_HOST);
+    properties.setRelayConnectionName(HYBRID_CONN);
 
     resolver = new DefaultTargetResolver(properties);
   }
@@ -89,13 +87,30 @@ class DefaultTargetResolverTest {
   }
 
   @Test
+  void createTargetUrl_requestThatMatchesRuleAndRuleHasHCWildCard_returnsRuleUrlWithoutHC()
+      throws URISyntaxException, InvalidRelayTargetException {
+    URI relayRequest = createRelayRequest(RULE_CONTAINS, TARGET_QS, false);
+
+    properties
+        .getTargetProperties()
+        .setTargetRoutingRules(
+            List.of(
+                new TargetRoutingRule(
+                    RULE_CONTAINS, RULE_TARGET_URL, "$hc-name/" + RULE_CONTAINS)));
+
+    URL target = resolver.createTargetUrl(relayRequest);
+
+    assertThat(target.toString(), equalTo(String.format("%s/?%s", RULE_TARGET_URL, TARGET_QS)));
+  }
+
+  @Test
   void createTargetUrl_requestThatMatchesRule_returnsRuleUrl()
       throws URISyntaxException, InvalidRelayTargetException {
     URI relayRequest = createRelayRequest(RULE_CONTAINS, TARGET_QS, false);
 
     properties
         .getTargetProperties()
-        .setTargetRoutingRules(List.of(new TargetRoutingRule(RULE_CONTAINS, RULE_TARGET_URL)));
+        .setTargetRoutingRules(List.of(new TargetRoutingRule(RULE_CONTAINS, RULE_TARGET_URL, "")));
 
     URL target = resolver.createTargetUrl(relayRequest);
 
@@ -111,7 +126,7 @@ class DefaultTargetResolverTest {
     properties
         .getTargetProperties()
         .setTargetRoutingRules(
-            List.of(new TargetRoutingRule(RULE_CONTAINS + "invalid", RULE_TARGET_URL)));
+            List.of(new TargetRoutingRule(RULE_CONTAINS + "invalid", RULE_TARGET_URL, "")));
 
     URL target = resolver.createTargetUrl(relayRequest);
 

@@ -26,7 +26,12 @@ The Terra Azure Relay Listener establishes a bi-directional channel with Azure R
 `listener.corsSupportProperties.preflightMethods` Methods that we support CORS. Default to `OPTIONS, POST, PUT, GET, DELETE, HEAD, PATCH`.
 
 `listener.targetProperties.targetRoutingRules` A list of routing rules. A rule is a tuple of the string the URI must contain for a match and the target host.
-The default `targetHost` is used. Example configuration:
+The default `targetHost` is used if the request URI does not match any rule.
+
+In a rule, you can specify path segments the listener must remove when creating the target URI
+by using the property `removeFromPath`. In the value, you can use `$hc-name` to represent the hybrid connection name (entity path) as a segment to remove. The listener replaces `$hc-name` with the value in `relayConnectionName` to construct the string to find in the URI at runtime.
+
+Example configuration:
 
 ```yaml
   targetProperties:
@@ -34,7 +39,8 @@ The default `targetHost` is used. Example configuration:
     targetRoutingRules:
       -
         pathContains: "welder"
-        targetHost: "http://localhsot:8081"
+        targetHost: "http://localhost:8081"
+        removeFromPath: "$hc-name/welder"
 ```
 ### Sam Inspector config options
 

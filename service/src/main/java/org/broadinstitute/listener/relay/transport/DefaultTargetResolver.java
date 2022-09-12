@@ -10,7 +10,7 @@ import org.broadinstitute.listener.relay.InvalidRelayTargetException;
 import org.springframework.lang.NonNull;
 
 public class DefaultTargetResolver implements TargetResolver {
-  public static String HC_NAME_RULE_WILD_CARD = "$hc-name";
+  public static final String HC_NAME_RULE_WILD_CARD = "$hc-name";
   private final String defaultTargetHost;
   private final ListenerProperties properties;
 

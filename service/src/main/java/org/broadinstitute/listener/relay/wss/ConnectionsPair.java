@@ -60,7 +60,7 @@ public class ConnectionsPair {
       try {
         logger.debug("Caller connection is open. Attempting to close the caller connection");
         callerConnection.close();
-        logger.info("Caller connection is closed");
+        logger.debug("Caller connection is closed");
       } catch (IOException e) {
         logger.error("Failed to close connection", e);
       }
@@ -69,7 +69,7 @@ public class ConnectionsPair {
     if (!localWebSocketConnection.isInputClosed()) {
       logger.debug("WebSocket connection is open. Attempting to close the local connection");
       localWebSocketConnection.sendClose(500, "Remote caller is not available");
-      logger.info("Local connection is closed");
+      logger.debug("Local connection is closed");
     }
   }
 }

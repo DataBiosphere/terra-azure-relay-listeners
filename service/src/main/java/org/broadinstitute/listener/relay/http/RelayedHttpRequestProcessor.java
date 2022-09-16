@@ -221,27 +221,6 @@ public class RelayedHttpRequestProcessor {
 
     return result;
   }
-
-  //  private void writeCORSHeaders(
-  //      RelayedHttpListenerResponse listenerResponse, RelayedHttpListenerRequest request) {
-  //    listenerResponse
-  //        .getHeaders()
-  //        .put(ACCESS_CONTROL_ALLOW_METHODS, corsSupportProperties.preflightMethods());
-  //
-  //    listenerResponse
-  //        .getHeaders()
-  //        .put(ACCESS_CONTROL_ALLOW_ORIGIN, request.getHeaders().getOrDefault("Origin", "*"));
-  //
-  //    listenerResponse.getHeaders().put(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
-  //    listenerResponse
-  //        .getHeaders()
-  //        .put(CONTENT_SECURITY_POLICY, corsSupportProperties.contentSecurityPolicy());
-  //    listenerResponse
-  //        .getHeaders()
-  //        .put(ACCESS_CONTROL_ALLOW_HEADERS, corsSupportProperties.allowHeaders());
-  //    listenerResponse.getHeaders().put(ACCESS_CONTROL_MAX_AGE, corsSupportProperties.maxAge());
-  //  }
-
   private void removeHeadersNotAcceptedByAzureRelay(Map<String, String> headers) {
     headers.remove("transfer-encoding");
     headers.remove("Transfer-Encoding");

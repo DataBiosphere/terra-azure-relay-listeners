@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import org.broadinstitute.listener.config.CorsSupportProperties;
+import org.broadinstitute.listener.relay.Utils;
 
 /**
  * Represents a response of the local endpoint that is independent of the HTTP client
@@ -105,7 +106,8 @@ public class TargetHttpResponse extends HttpMessage {
                 }
               });
 
-      responseHeaders.put(CONTENT_SECURITY_POLICY, corsSupportProperties.contentSecurityPolicy());
+      Utils.writeCORSHeaders(
+          responseHeaders, context.getRequest().getHeaders(), corsSupportProperties);
     }
 
     InputStream body = (InputStream) clientHttpResponse.body();

@@ -221,6 +221,7 @@ public class RelayedHttpRequestProcessor {
 
     return result;
   }
+
   private void removeHeadersNotAcceptedByAzureRelay(Map<String, String> headers) {
     headers.remove("transfer-encoding");
     headers.remove("Transfer-Encoding");

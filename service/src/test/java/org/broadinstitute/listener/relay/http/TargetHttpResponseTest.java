@@ -1,11 +1,12 @@
 package org.broadinstitute.listener.relay.http;
 
-import static com.google.common.net.HttpHeaders.CONTENT_SECURITY_POLICY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.mockito.Mockito.when;
 
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
+import com.microsoft.azure.relay.RelayedHttpListenerRequest;
 import com.microsoft.azure.relay.TrackingContext;
 import java.io.ByteArrayInputStream;
 import java.net.http.HttpHeaders;
@@ -13,6 +14,7 @@ import java.net.http.HttpResponse;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import org.broadinstitute.listener.config.CorsSupportProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +40,8 @@ class TargetHttpResponseTest {
   @Mock private HttpResponse httpResponse;
 
   @Mock private HttpHeaders httpHeaders;
+
+  @Mock private RelayedHttpListenerRequest relayedHttpListenerRequest;
 
   private Map<String, List<String>> headers;
 
@@ -68,14 +72,24 @@ class TargetHttpResponseTest {
     when(httpHeaders.map()).thenReturn(headers);
     when(httpResponse.headers()).thenReturn(httpHeaders);
     when(httpResponse.statusCode()).thenReturn(200);
+    when(context.getRequest()).thenReturn(relayedHttpListenerRequest);
 
     targetHttpResponse =
         targetHttpResponse.createTargetHttpResponse(
             httpResponse, context, new CorsSupportProperties("", "", " ", ""));
     assertThat(targetHttpResponse.getStatusCode(), equalTo(200));
     assertThat(targetHttpResponse.getBody().get(), equalTo(body));
-    headers.put(CONTENT_SECURITY_POLICY, List.of("dummy"));
-    assertThat(targetHttpResponse.getHeaders().get().keySet(), equalTo(headers.keySet()));
+
+    // check if response headers from the target were included in the listener's response
+    for (Entry<String, List<String>> entry : headers.entrySet()) {
+      assertThat(
+          targetHttpResponse.getHeaders().get(),
+          hasEntry(
+              entry.getKey(),
+              entry.getValue().stream().findFirst().get())); // multi-part headers are not supported
+    }
+
+    // assertThat(targetHttpResponse.getHeaders().get().keySet(), equalTo(headers.keySet()));
     assertThat(targetHttpResponse.getContext(), equalTo(context));
   }
 }

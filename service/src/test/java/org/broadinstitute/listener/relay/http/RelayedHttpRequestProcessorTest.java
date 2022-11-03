@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import org.broadinstitute.listener.config.CorsSupportProperties;
 import org.broadinstitute.listener.relay.InvalidRelayTargetException;
@@ -47,7 +48,6 @@ class RelayedHttpRequestProcessorTest {
   private static final String BODY_CONTENT = "BODY";
   private static final String TARGET_URL = "http://localhost:8080/g?a=a";
   private static final String TARGET_WS_URL = "ws://localhost:8080/";
-
   private static final String RELAY_URL = "https://relay.azure.com/connection/g?a=a";
 
   private ByteArrayInputStream body;
@@ -101,7 +101,16 @@ class RelayedHttpRequestProcessorTest {
 
     assertThat(response.getStatusCode(), equalTo(200));
     targetResponseHeaders.put(CONTENT_SECURITY_POLICY, List.of("dummy"));
-    assertThat(response.getHeaders().get().keySet(), equalTo(targetResponseHeaders.keySet()));
+
+    // check if response headers from the target were included in the listener's response
+    for (Entry<String, List<String>> entry : targetResponseHttpHeaders.map().entrySet()) {
+      assertThat(
+          response.getHeaders().get(),
+          hasEntry(
+              entry.getKey(),
+              entry.getValue().stream().findFirst().get())); // multi-part headers are not supported
+    }
+
     assertThat(data, equalTo(BODY_CONTENT));
   }
 

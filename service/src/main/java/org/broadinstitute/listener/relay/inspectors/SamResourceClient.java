@@ -14,6 +14,7 @@ public class SamResourceClient {
   private final String samResourceType;
   private final TokenChecker tokenChecker;
   private final ApiClient samClient;
+  private final String samAction;
 
   private final Logger logger = LoggerFactory.getLogger(SamResourceClient.class);
 
@@ -21,16 +22,18 @@ public class SamResourceClient {
       String samResourceId,
       String samResourceType,
       ApiClient samClient,
-      TokenChecker tokenChecker) {
+      TokenChecker tokenChecker,
+      String samAction) {
     this.samResourceId = samResourceId;
     this.samResourceType = samResourceType;
     this.tokenChecker = tokenChecker;
     this.samClient = samClient;
+    this.samAction = samAction;
   }
 
   // Should only be used in checkCachedPermission, but making it public so that we can test it
   @Cacheable("expiresAt")
-  public Instant checkWritePermission(String accessToken) {
+  public Instant checkPermission(String accessToken) {
     try {
       var oauthInfo = tokenChecker.getOauthInfo(accessToken);
       if (oauthInfo.expiresAt().isPresent()) {
@@ -38,7 +41,7 @@ public class SamResourceClient {
         samClient.setAccessToken(accessToken);
         var resourceApi = new ResourcesApi(samClient);
 
-        var res = resourceApi.resourcePermissionV2(samResourceType, samResourceId, "write");
+        var res = resourceApi.resourcePermissionV2(samResourceType, samResourceId, samAction);
         if (res) return oauthInfo.expiresAt().get();
         else {
           logger.error("unauthorized request");

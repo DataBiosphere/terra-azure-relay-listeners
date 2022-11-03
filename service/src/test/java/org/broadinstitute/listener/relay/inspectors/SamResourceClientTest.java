@@ -30,11 +30,11 @@ class SamResourceClientTest {
   @BeforeEach
   void setUp() throws IOException, InterruptedException, ApiException {
     samResourceClient =
-        new SamResourceClient("resourceId", "resourceType", apiClient, tokenChecker);
+        new SamResourceClient("resourceId", "resourceType", apiClient, tokenChecker, "myaction");
   }
 
   @Test
-  void checkWritePermission_sucess() throws IOException, InterruptedException, ApiException {
+  void checkPermission_success() throws IOException, InterruptedException, ApiException {
     var expiresAt = Instant.now().plusSeconds(100);
     var oauthResponse = new OauthInfo(Optional.of(expiresAt), "");
     when(tokenChecker.getOauthInfo(any())).thenReturn(oauthResponse);
@@ -42,17 +42,17 @@ class SamResourceClientTest {
     when(apiClient.execute(any(), any())).thenReturn(apiResponse);
     when(apiClient.escapeString(any())).thenReturn("string");
 
-    var expiresAtAfterPermissionCheck = samResourceClient.checkWritePermission("accessToken");
+    var expiresAtAfterPermissionCheck = samResourceClient.checkPermission("accessToken");
 
     assertThat(expiresAtAfterPermissionCheck, equalTo(expiresAt));
   }
 
   @Test
-  void checkWritePermission_token_expired() throws IOException, InterruptedException {
+  void checkPermission_token_expired() throws IOException, InterruptedException {
     var oauthResponse = new OauthInfo(Optional.of(Instant.now().minusSeconds(100)), "");
     when(tokenChecker.getOauthInfo(any())).thenReturn(oauthResponse);
 
-    var res = samResourceClient.checkWritePermission("accessToken");
+    var res = samResourceClient.checkPermission("accessToken");
 
     assertThat(res, equalTo(Instant.EPOCH));
   }

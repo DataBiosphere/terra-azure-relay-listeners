@@ -37,13 +37,14 @@ public class AppConfiguration {
   @Bean
   public SamResourceClient samResourceClient(TokenChecker tokenChecker) {
     ApiClient samClient = new ApiClient();
-    samClient.setBasePath(properties.getSamInspectorProperties().samUrl());
+    samClient.setBasePath(properties.getSamInspectorProperties().getSamUrl());
     // return a simple resolver that uses the configuration value.
     return new SamResourceClient(
-        properties.getSamInspectorProperties().samResourceId(),
-        properties.getSamInspectorProperties().samResourceType(),
+        properties.getSamInspectorProperties().getSamResourceId(),
+        properties.getSamInspectorProperties().getSamResourceType(),
         samClient,
-        tokenChecker);
+        tokenChecker,
+        properties.getSamInspectorProperties().getSamAction());
   }
 
   @Bean

@@ -89,7 +89,6 @@ class TargetHttpResponseTest {
               entry.getValue().stream().findFirst().get())); // multi-part headers are not supported
     }
 
-    // assertThat(targetHttpResponse.getHeaders().get().keySet(), equalTo(headers.keySet()));
     assertThat(targetHttpResponse.getContext(), equalTo(context));
   }
 }

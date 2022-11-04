@@ -30,7 +30,9 @@ public class SamPermissionInspector implements RequestInspector {
   @Override
   public boolean inspectRelayedHttpRequest(
       @NonNull RelayedHttpListenerRequest relayedHttpListenerRequest) {
-    return checkPermission(relayedHttpListenerRequest.getHeaders());
+    var requestPath = relayedHttpListenerRequest.getUri().toString();
+    if (requestPath.endsWith("status") || requestPath.endsWith("status/")) return true;
+    else return checkPermission(relayedHttpListenerRequest.getHeaders());
   }
 
   private boolean checkPermission(Map<String, String> headers) {

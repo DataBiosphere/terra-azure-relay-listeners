@@ -53,7 +53,7 @@ class ExpiresAtCacheTest {
   void setUp() {
     mock = AopTestUtils.getTargetObject(samResourceClient);
     reset(mock);
-    when(mock.checkWritePermission("accessToken")).thenReturn(Instant.ofEpochSecond(100));
+    when(mock.checkPermission("accessToken")).thenReturn(Instant.ofEpochSecond(100));
   }
 
   private Optional<Instant> getCachedExpiresAt(String accessToken) {
@@ -63,15 +63,15 @@ class ExpiresAtCacheTest {
 
   @Test
   void checkWritePermission_sucess() {
-    samResourceClient.checkWritePermission("accessToken");
+    samResourceClient.checkPermission("accessToken");
     assertThat(getCachedExpiresAt("accessToken").get(), equalTo(Instant.ofEpochSecond(100)));
     assertEquals(getCachedExpiresAt("accessToken-non-existent"), Optional.empty());
-    verify(mock, times(1)).checkWritePermission("accessToken");
+    verify(mock, times(1)).checkPermission("accessToken");
 
-    samResourceClient.checkWritePermission("accessToken");
+    samResourceClient.checkPermission("accessToken");
     verifyNoMoreInteractions(mock);
 
-    samResourceClient.checkWritePermission("accessToken2");
-    verify(mock, times(1)).checkWritePermission("accessToken2");
+    samResourceClient.checkPermission("accessToken2");
+    verify(mock, times(1)).checkPermission("accessToken2");
   }
 }

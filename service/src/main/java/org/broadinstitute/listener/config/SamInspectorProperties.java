@@ -1,3 +1,4 @@
 package org.broadinstitute.listener.config;
 
-public record SamInspectorProperties(String samUrl, String samResourceId, String samResourceType) {}
+public record SamInspectorProperties(
+    String samUrl, String samResourceId, String samResourceType, String samAction) {}

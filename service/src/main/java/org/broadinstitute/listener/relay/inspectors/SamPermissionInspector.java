@@ -51,7 +51,7 @@ public class SamPermissionInspector implements RequestInspector {
   }
 
   public boolean checkCachedPermission(String accessToken) {
-    var expiresAt = samResourceClient.checkWritePermission(accessToken);
+    var expiresAt = samResourceClient.checkPermission(accessToken);
     return expiresAt.isAfter(Instant.now());
   }
 

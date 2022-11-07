@@ -43,7 +43,8 @@ public class AppConfiguration {
         properties.getSamInspectorProperties().samResourceId(),
         properties.getSamInspectorProperties().samResourceType(),
         samClient,
-        tokenChecker);
+        tokenChecker,
+        properties.getSamInspectorProperties().samAction());
   }
 
   @Bean

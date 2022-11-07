@@ -54,6 +54,8 @@ that have write access to a specific Sam resource.
 `listener.samInspectorProperties.samResourceType`: The type of the Sam resource to check access to.
 Defaults to `controlled-application-private-workspace-resource`, which corresponds Leo-managed resources.
 
+`listener.samInspectorProperties.samAction`: The Sam action to check. Default value is `write`
+
 ## Running Jupyter Notebooks
 
 To enable access to a Jupyter Notebooks server instance via Azure Relay using the listener,

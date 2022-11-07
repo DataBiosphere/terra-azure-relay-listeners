@@ -24,6 +24,7 @@ listener:
     samUrl:
     samResourceId:
     samResourceType: "controlled-application-private-workspace-resource"
+    samAction: "write"
   corsSupportProperties:
     preflightMethods: "OPTIONS, POST, PUT, GET, DELETE, HEAD, PATCH"
     allowHeaders: "Authorization, Content-Type, Accept, Origin,X-App-Id"

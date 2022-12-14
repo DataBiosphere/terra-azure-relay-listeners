@@ -39,7 +39,7 @@ dependencies {
 		exclude group: 'org.springframework.boot', module: 'spring-boot-starter-data-jdbc'
 	}
 	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:0.1-cbcad54'
-	implementation 'com.microsoft.azure:azure-relay:0.0.4'
+	implementation 'com.microsoft.azure:azure-relay:0.0.5'
 	implementation 'org.apache.commons:commons-lang3:3.0'
 	implementation 'io.projectreactor:reactor-core:3.4.14'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'

@@ -11,7 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 import reactor.core.publisher.SynchronousSink;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 @Component
 public class RelayedRequestPipeline {
@@ -37,7 +40,7 @@ public class RelayedRequestPipeline {
 
   public void processRelayedRequests() {
     logger.debug("Registering HTTP pipeline");
-    registerHttpExecutionPipeline();
+    registerHttpExecutionPipeline(Schedulers.boundedElastic());
 
     logger.debug("Registering WebSocket upgrades pipeline");
     webSocketConnectionsHandler
@@ -71,9 +74,10 @@ public class RelayedRequestPipeline {
                     .subscribe(webSocketConnectionsRelayerService::startDataRelay));
   }
 
-  public void registerHttpExecutionPipeline() {
+  public void registerHttpExecutionPipeline(Scheduler scheduler) {
     listenerConnectionHandler
         .receiveRelayedHttpRequests()
+        .publishOn(scheduler)
         .filter(c -> listenerConnectionHandler.isNotPreflight(c.getRequest()))
         .doOnDiscard(RelayedHttpListenerContext.class, httpRequestProcessor::writePreflightResponse)
         .filter(c -> listenerConnectionHandler.isNotSetCookie(c.getRequest()))
@@ -83,8 +87,9 @@ public class RelayedRequestPipeline {
         .doOnDiscard(
             RelayedHttpListenerContext.class,
             httpRequestProcessor::writeNotAcceptedResponseOnCaller)
-        .map(httpRequestProcessor::executeRequestOnTarget)
-        .map(httpRequestProcessor::writeTargetResponseOnCaller)
+        .flatMap((r) -> Mono.just(httpRequestProcessor.executeRequestOnTarget(r)))
+        .flatMap((r) -> Mono.just(httpRequestProcessor.writeTargetResponseOnCaller(r)))
+        .doOnError(ex -> logger.error("Failed to process the request.", ex))
         .subscribe(
             result -> logger.info("Processed request with the following result: {}", result));
   }

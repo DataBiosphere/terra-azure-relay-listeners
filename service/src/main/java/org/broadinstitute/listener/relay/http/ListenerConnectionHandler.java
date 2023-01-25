@@ -70,9 +70,10 @@ public class ListenerConnectionHandler {
                 context -> {
                   try {
                     logger.debug(
-                        "Received HTTP request. URI: {}. Tracking ID:{}",
+                        "Received HTTP request. URI: {}. Tracking ID:{} Method:{}",
                         context.getRequest().getUri(),
-                        context.getTrackingContext().getTrackingId());
+                        context.getTrackingContext().getTrackingId(),
+                        context.getRequest().getHttpMethod());
                     sink.next(context);
                   } catch (Throwable ex) {
                     logger.error(

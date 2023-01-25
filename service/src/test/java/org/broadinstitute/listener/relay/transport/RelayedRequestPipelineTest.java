@@ -21,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @ExtendWith(MockitoExtension.class)
 class RelayedRequestPipelineTest {
@@ -59,7 +60,7 @@ class RelayedRequestPipelineTest {
     when(relayedHttpRequestProcessor.writeTargetResponseOnCaller(targetHttpResponse))
         .thenReturn(Result.SUCCESS);
 
-    relayedRequestPipeline.registerHttpExecutionPipeline();
+    relayedRequestPipeline.registerHttpExecutionPipeline(Schedulers.immediate());
 
     verify(relayedHttpRequestProcessor, times(1)).executeRequestOnTarget(requestContext);
     verify(relayedHttpRequestProcessor, times(1)).writeTargetResponseOnCaller(targetHttpResponse);
@@ -76,7 +77,7 @@ class RelayedRequestPipelineTest {
         .thenReturn(false);
     when(listenerConnectionHandler.isNotPreflight(any())).thenReturn(true);
 
-    relayedRequestPipeline.registerHttpExecutionPipeline();
+    relayedRequestPipeline.registerHttpExecutionPipeline(Schedulers.immediate());
 
     verify(relayedHttpRequestProcessor, times(0)).executeRequestOnTarget(any());
     verify(relayedHttpRequestProcessor, times(0)).writeTargetResponseOnCaller(any());

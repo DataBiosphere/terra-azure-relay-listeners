@@ -87,9 +87,14 @@ public class RelayedRequestPipeline {
         .doOnDiscard(
             RelayedHttpListenerContext.class,
             httpRequestProcessor::writeNotAcceptedResponseOnCaller)
-        .flatMap((r) -> Mono.fromCallable(() -> httpRequestProcessor.executeRequestOnTarget(r)))
         .flatMap(
-            (r) -> Mono.fromCallable(() -> httpRequestProcessor.writeTargetResponseOnCaller(r)))
+            (r) ->
+                Mono.fromCallable(() -> httpRequestProcessor.executeRequestOnTarget(r))
+                    .subscribeOn(scheduler))
+        .flatMap(
+            (r) ->
+                Mono.fromCallable(() -> httpRequestProcessor.writeTargetResponseOnCaller(r))
+                    .subscribeOn(scheduler))
         .doOnError(ex -> logger.error("Failed to process the request.", ex))
         .subscribe(
             result -> logger.info("Processed request with the following result: {}", result));

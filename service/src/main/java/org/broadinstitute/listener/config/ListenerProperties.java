@@ -12,6 +12,7 @@ public class ListenerProperties {
   private TargetProperties targetProperties;
   private SamInspectorProperties samInspectorProperties;
   private CorsSupportProperties corsSupportProperties;
+  private SetDateAccessedInspectorProperties setDateAccessedInspectorProperties;
 
   public CorsSupportProperties getCorsSupportProperties() {
     return corsSupportProperties;
@@ -61,5 +62,14 @@ public class ListenerProperties {
 
   public void setRequestInspectors(List<InspectorType> requestInspectors) {
     this.requestInspectors = requestInspectors;
+  }
+
+  public SetDateAccessedInspectorProperties getSetDateAccessedInspectorProperties() {
+    return setDateAccessedInspectorProperties;
+  }
+
+  public void setSetDateAccessedInspectorProperties(
+      SetDateAccessedInspectorProperties setDateAccessedInspectorProperties) {
+    this.setDateAccessedInspectorProperties = setDateAccessedInspectorProperties;
   }
 }

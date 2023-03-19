@@ -18,10 +18,10 @@ listener:
         targetHost: "http://localhost:8081"
         removeFromPath: "$hc-name/welder"
   requestInspectors:
-    - headersLogger
-#    - samChecker
+#    - headersLogger
+    - samChecker
 #    - setDateAccessed
-  SetDateAccessedInspectorProperties:
+  setDateAccessedInspectorProperties:
     serviceHost:
     workspaceId:
     callWindowInSeconds: 60

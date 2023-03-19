@@ -91,7 +91,6 @@ public class RelayedRequestPipeline {
                               c.getRequest())) {
                             return httpRequestProcessor.executeRequestOnTarget(c);
                           }
-
                           httpRequestProcessor.writeNotAcceptedResponseOnCaller(c);
 
                           return Mono.empty();

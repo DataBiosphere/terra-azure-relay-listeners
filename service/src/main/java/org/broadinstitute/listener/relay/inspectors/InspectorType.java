@@ -5,7 +5,6 @@ public enum InspectorType {
   SET_DATE_ACCESSED(InspectorNameConstants.SET_DATE_ACCESSED),
   SAM_CHECKER(InspectorNameConstants.SAM_CHECKER);
 
-
   private final String inspectorName;
 
   InspectorType(String inspectorName) {

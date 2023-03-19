@@ -24,38 +24,61 @@ public class SetDateAccessedInspector implements RequestInspector {
   private Instant lastAccessedDate;
   private final URL serviceUrl;
 
-  private final int requestWindowInSeconds;
+  private final int callWindowInSeconds;
   private final HttpClient httpClient;
-  private static final String API_SEGMENT_PATTERN =
-      "%s/api/v2/runtimes/%s/<runtimeName>/setDateAccessed";
+  private static final int MIN_CALL_WINDOW_IN_SECONDS = 1;
+  private static final String API_ENDPOINT_PATTERN = "%s/api/v2/runtimes/%s/%s/setDateAccessed";
 
-  public SetDateAccessedInspector(
-      int requestWindowInSeconds, String serviceHost, String workspaceId, HttpClient httpClient)
+  public SetDateAccessedInspector(SetDateAccessedInspectorOptions options)
       throws URISyntaxException, MalformedURLException {
 
-    if (requestWindowInSeconds <= 0) {
-      throw new IllegalArgumentException(
-          "The request value in seconds is invalid. It must be greater than 0");
+    validateOptions(options);
+
+    this.httpClient = options.httpClient();
+    this.callWindowInSeconds = options.callWindowInSeconds();
+
+    lastAccessedDate = Instant.now();
+    URIBuilder builder =
+        new URIBuilder(
+            String.format(
+                Locale.ROOT,
+                API_ENDPOINT_PATTERN,
+                options.serviceHost(),
+                options.workspaceId(),
+                options.runtimeName()));
+
+    serviceUrl = builder.build().toURL();
+  }
+
+  private void validateOptions(SetDateAccessedInspectorOptions options) {
+    if (options == null) {
+      throw new IllegalArgumentException("Inspector options can't be null");
     }
 
-    if (Strings.isNullOrEmpty(serviceHost)) {
+    if (options.callWindowInSeconds() <= MIN_CALL_WINDOW_IN_SECONDS) {
+      throw new IllegalArgumentException(
+          "The call window value in seconds is invalid. It must be greater than "
+              + MIN_CALL_WINDOW_IN_SECONDS);
+    }
+
+    if (Strings.isNullOrEmpty(options.serviceHost())) {
       throw new IllegalArgumentException(
           "The service host is missing. Please check the configuration");
     }
 
-    if (Strings.isNullOrEmpty(workspaceId)) {
+    if (Strings.isNullOrEmpty(options.runtimeName())) {
+      throw new IllegalArgumentException(
+          "The runtime name is missing. Please check the configuration");
+    }
+
+    if (options.workspaceId() == null) {
       throw new IllegalArgumentException(
           "The workspace id is missing. Please check the configuration");
     }
 
-    this.httpClient = httpClient;
-    this.requestWindowInSeconds = requestWindowInSeconds;
-
-    lastAccessedDate = Instant.now().plusSeconds(requestWindowInSeconds);
-    URIBuilder builder =
-        new URIBuilder(String.format(Locale.ROOT, API_SEGMENT_PATTERN, serviceHost, workspaceId));
-
-    serviceUrl = builder.build().toURL();
+    if (options.httpClient() == null) {
+      throw new IllegalArgumentException("The http client can't be null");
+    }
   }
 
   @Override
@@ -71,8 +94,9 @@ public class SetDateAccessedInspector implements RequestInspector {
     return checkLastAccessDateAndCallServiceIfExpired(relayedHttpListenerRequest);
   }
 
-  private boolean checkLastAccessDateAndCallServiceIfExpired(RelayedHttpListenerRequest relayedHttpListenerRequest) {
-    if (hasLastAccessDateExpired()){
+  private synchronized boolean checkLastAccessDateAndCallServiceIfExpired(
+      RelayedHttpListenerRequest relayedHttpListenerRequest) {
+    if (hasLastAccessDateExpired()) {
       setLastAccessedDateOnService(relayedHttpListenerRequest);
       updateLastAccessedDate();
     }
@@ -89,7 +113,9 @@ public class SetDateAccessedInspector implements RequestInspector {
               .header(
                   "Authorization",
                   "Bearer "
-                      + Utils.getTokenFromAuthorization(relayedHttpListenerRequest.getHeaders()))
+                      + Utils.getTokenFromAuthorization(relayedHttpListenerRequest.getHeaders())
+                          .orElseThrow(
+                              () -> new RuntimeException("Authorization header not found")))
               .build();
     } catch (URISyntaxException e) {
       logger.error("Failed to parse the URL to set the date accessed via the API", e);
@@ -111,11 +137,11 @@ public class SetDateAccessedInspector implements RequestInspector {
         response.statusCode());
   }
 
-  private synchronized boolean hasLastAccessDateExpired() {
-    return Instant.now().isBefore(lastAccessedDate);
+  private boolean hasLastAccessDateExpired() {
+    return Instant.now().isAfter(lastAccessedDate);
   }
 
-  private synchronized void updateLastAccessedDate() {
-    lastAccessedDate = lastAccessedDate.plusSeconds(requestWindowInSeconds);
+  private void updateLastAccessedDate() {
+    lastAccessedDate = lastAccessedDate.plusSeconds(callWindowInSeconds);
   }
 }

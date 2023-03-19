@@ -94,12 +94,17 @@ public class SetDateAccessedInspector implements RequestInspector {
     return checkLastAccessDateAndCallServiceIfExpired(relayedHttpListenerRequest);
   }
 
-  private synchronized boolean checkLastAccessDateAndCallServiceIfExpired(
+  private boolean checkLastAccessDateAndCallServiceIfExpired(
       RelayedHttpListenerRequest relayedHttpListenerRequest) {
-    if (hasLastAccessDateExpired()) {
-      setLastAccessedDateOnService(relayedHttpListenerRequest);
-      updateLastAccessedDate();
+    try {
+      if (hasLastAccessDateExpired()) {
+        setLastAccessedDateOnService(relayedHttpListenerRequest);
+        updateLastAccessedDate();
+      }
+    } catch (RuntimeException ex) {
+      logger.error("Failed set the last accessed date. The request still will get processed", ex);
     }
+
     return true;
   }
 
@@ -115,7 +120,9 @@ public class SetDateAccessedInspector implements RequestInspector {
                   "Bearer "
                       + Utils.getTokenFromAuthorization(relayedHttpListenerRequest.getHeaders())
                           .orElseThrow(
-                              () -> new RuntimeException("Authorization header not found")))
+                              () ->
+                                  new RuntimeException(
+                                      "Authorization token not found in the request")))
               .build();
     } catch (URISyntaxException e) {
       logger.error("Failed to parse the URL to set the date accessed via the API", e);
@@ -137,11 +144,11 @@ public class SetDateAccessedInspector implements RequestInspector {
         response.statusCode());
   }
 
-  private boolean hasLastAccessDateExpired() {
+  private synchronized boolean hasLastAccessDateExpired() {
     return Instant.now().isAfter(lastAccessedDate);
   }
 
-  private void updateLastAccessedDate() {
+  private synchronized void updateLastAccessedDate() {
     lastAccessedDate = lastAccessedDate.plusSeconds(callWindowInSeconds);
   }
 }

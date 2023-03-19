@@ -2,6 +2,7 @@ package org.broadinstitute.listener.relay.inspectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -73,8 +74,8 @@ class SetDateAccessedInspectorTest {
   @Test
   void inspectRelayedHttpRequest_calledTwice_onlyOneCallToHttpClient()
       throws IOException, InterruptedException {
-    inspector.inspectWebSocketUpgradeRequest(listenerRequest);
-    inspector.inspectWebSocketUpgradeRequest(listenerRequest);
+    inspector.inspectRelayedHttpRequest(listenerRequest);
+    inspector.inspectRelayedHttpRequest(listenerRequest);
 
     verify(httpClient, times(1)).send(any(), any());
   }
@@ -82,13 +83,13 @@ class SetDateAccessedInspectorTest {
   @Test
   void inspectRelayedHttpRequest_multipleCallsOverTwoWindows_twiceCallToHttpClient()
       throws IOException, InterruptedException {
-    inspector.inspectWebSocketUpgradeRequest(listenerRequest);
-    inspector.inspectWebSocketUpgradeRequest(listenerRequest);
-    inspector.inspectWebSocketUpgradeRequest(listenerRequest);
+    inspector.inspectRelayedHttpRequest(listenerRequest);
+    inspector.inspectRelayedHttpRequest(listenerRequest);
+    inspector.inspectRelayedHttpRequest(listenerRequest);
     Thread.sleep(CALL_WINDOW_IN_SECONDS * 1000);
-    inspector.inspectWebSocketUpgradeRequest(listenerRequest);
-    inspector.inspectWebSocketUpgradeRequest(listenerRequest);
-    inspector.inspectWebSocketUpgradeRequest(listenerRequest);
+    inspector.inspectRelayedHttpRequest(listenerRequest);
+    inspector.inspectRelayedHttpRequest(listenerRequest);
+    inspector.inspectRelayedHttpRequest(listenerRequest);
 
     verify(httpClient, times(2)).send(any(), any());
   }
@@ -96,12 +97,20 @@ class SetDateAccessedInspectorTest {
   @Test
   void inspectRelayedHttpRequest_callOnce_callToLeoHasAuthHeader()
       throws IOException, InterruptedException {
-    inspector.inspectWebSocketUpgradeRequest(listenerRequest);
+    inspector.inspectRelayedHttpRequest(listenerRequest);
 
     verify(httpClient, times(1)).send(httpRequestArgumentCaptor.capture(), any());
 
     assertThat(
         httpRequestArgumentCaptor.getValue().headers().map(),
         hasEntry(AUTHORIZATION_HEADER, List.of(AUTH_TOKEN)));
+  }
+
+  @Test
+  void inspectRelayedHttpRequest_sendOperationThrows_returnTrue()
+      throws IOException, InterruptedException {
+    when(httpClient.send(any(), any())).thenThrow(RuntimeException.class);
+
+    assertThat(inspector.inspectRelayedHttpRequest(listenerRequest), is(true));
   }
 }

@@ -59,7 +59,7 @@ Each inspector may have additional configuration properties.
 By using the Sam Checker inspector, the Listener can be configured to allow access only for users
 that have write access to a specific Sam resource.
 
-#### Configuration Properties
+##### Configuration Properties
 
 `listener.samInspectorProperties.samUrl`: URL to the Sam instance we should talk to
 
@@ -76,7 +76,7 @@ The `setDateAccessed` inspector enables a callback to Leo using the auth token o
 Leo uses this call to determine if the runtime instance has been accessed recently and determine if auto-pausing is required.
 
 
-#### config options
+##### Configuration Properties
 `listener.setDateAccessedInspectorProperties.serviceHost`: Leo server host.
 `listener.setDateAccessedInspectorProperties.workspaceId`: ID of the workspace containing the runtime instance.
 `listener.setDateAccessedInspectorProperties.callWindowInSeconds`: The time window in seconds in which, at the most, one call is made to the endpoint regardless of the number of requests made during that period.

@@ -102,7 +102,7 @@ public class SetDateAccessedInspector implements RequestInspector {
         updateLastAccessedDate();
       }
     } catch (RuntimeException ex) {
-      logger.error("Failed set the last accessed date. The request still will get processed", ex);
+      logger.error("Failed to set the last accessed date. The request still will get processed", ex);
     }
 
     return true;
@@ -135,7 +135,7 @@ public class SetDateAccessedInspector implements RequestInspector {
     try {
       response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
     } catch (IOException | InterruptedException e) {
-      logger.error("Failed to call the set the date accessed API", e);
+      logger.error("Failed to call the set date accessed API", e);
       throw new RuntimeException(e);
     }
 

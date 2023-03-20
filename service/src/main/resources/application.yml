@@ -20,6 +20,13 @@ listener:
   requestInspectors:
 #    - headersLogger
     - samChecker
+#    - setDateAccessed
+  setDateAccessedInspectorProperties:
+    serviceHost:
+    workspaceId:
+    callWindowInSeconds: 60
+    runtimeName:
+
   samInspectorProperties:
     samUrl:
     samResourceId:

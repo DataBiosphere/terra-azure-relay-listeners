@@ -5,6 +5,8 @@ import com.microsoft.azure.relay.RelayConnectionStringBuilder;
 import com.microsoft.azure.relay.TokenProvider;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpClient.Version;
 import java.util.ArrayList;
 import java.util.List;
 import org.broadinstitute.dsde.workbench.client.sam.ApiClient;
@@ -13,6 +15,7 @@ import org.broadinstitute.listener.relay.inspectors.InspectorLocator;
 import org.broadinstitute.listener.relay.inspectors.InspectorsProcessor;
 import org.broadinstitute.listener.relay.inspectors.RequestInspector;
 import org.broadinstitute.listener.relay.inspectors.SamResourceClient;
+import org.broadinstitute.listener.relay.inspectors.SetDateAccessedInspectorOptions;
 import org.broadinstitute.listener.relay.inspectors.TokenChecker;
 import org.broadinstitute.listener.relay.transport.DefaultTargetResolver;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
@@ -45,6 +48,16 @@ public class AppConfiguration {
         samClient,
         tokenChecker,
         properties.getSamInspectorProperties().samAction());
+  }
+
+  @Bean
+  public SetDateAccessedInspectorOptions setDateAccessedInspectorOptions() {
+    return new SetDateAccessedInspectorOptions(
+        properties.getSetDateAccessedInspectorProperties().serviceHost(),
+        properties.getSetDateAccessedInspectorProperties().workspaceId(),
+        properties.getSetDateAccessedInspectorProperties().callWindowInSeconds(),
+        properties.getSetDateAccessedInspectorProperties().runtimeName(),
+        HttpClient.newBuilder().version(Version.HTTP_1_1).build());
   }
 
   @Bean

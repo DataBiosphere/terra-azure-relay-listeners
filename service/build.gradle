@@ -40,7 +40,7 @@ dependencies {
 	}
 	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:0.1-cbcad54'
 	implementation 'com.microsoft.azure:azure-relay:0.0.5'
-	implementation 'org.apache.commons:commons-lang3:3.0'
+	implementation 'org.apache.commons:commons-lang3:3.10'
 	implementation 'io.projectreactor:reactor-core:3.4.14'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'

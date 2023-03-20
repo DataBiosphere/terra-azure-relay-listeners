@@ -4,6 +4,7 @@ import com.microsoft.azure.relay.HybridConnectionChannel;
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
 import org.broadinstitute.listener.relay.http.ListenerConnectionHandler;
 import org.broadinstitute.listener.relay.http.RelayedHttpRequestProcessor;
+import org.broadinstitute.listener.relay.http.TargetHttpResponse;
 import org.broadinstitute.listener.relay.wss.ConnectionsPair;
 import org.broadinstitute.listener.relay.wss.WebSocketConnectionsHandler;
 import org.broadinstitute.listener.relay.wss.WebSocketConnectionsRelayerService;
@@ -82,18 +83,25 @@ public class RelayedRequestPipeline {
         .doOnDiscard(RelayedHttpListenerContext.class, httpRequestProcessor::writePreflightResponse)
         .filter(c -> listenerConnectionHandler.isNotSetCookie(c.getRequest()))
         .doOnDiscard(RelayedHttpListenerContext.class, httpRequestProcessor::writeSetCookieResponse)
-        .filter(
-            c -> listenerConnectionHandler.isRelayedHttpRequestAcceptedByInspectors(c.getRequest()))
-        .doOnDiscard(
-            RelayedHttpListenerContext.class,
-            httpRequestProcessor::writeNotAcceptedResponseOnCaller)
         .flatMap(
-            (r) ->
-                Mono.fromCallable(() -> httpRequestProcessor.executeRequestOnTarget(r))
+            (c) ->
+                Mono.fromCallable(
+                        () -> {
+                          if (listenerConnectionHandler.isRelayedHttpRequestAcceptedByInspectors(
+                              c.getRequest())) {
+                            return httpRequestProcessor.executeRequestOnTarget(c);
+                          }
+                          httpRequestProcessor.writeNotAcceptedResponseOnCaller(c);
+
+                          return Mono.empty();
+                        })
                     .subscribeOn(scheduler))
         .flatMap(
             (r) ->
-                Mono.fromCallable(() -> httpRequestProcessor.writeTargetResponseOnCaller(r))
+                Mono.fromCallable(
+                        () ->
+                            httpRequestProcessor.writeTargetResponseOnCaller(
+                                (TargetHttpResponse) r))
                     .subscribeOn(scheduler))
         .doOnError(ex -> logger.error("Failed to process the request.", ex))
         .subscribe(

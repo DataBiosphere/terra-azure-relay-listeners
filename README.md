@@ -42,10 +42,24 @@ Example configuration:
         targetHost: "http://localhost:8081"
         removeFromPath: "$hc-name/welder"
 ```
-### Sam Inspector config options
+### Inspectors
 
+Inspectors are enabled via the property `requestInspectors`.
+
+Example:
+```yaml
+requestInspectors:
+    - samChecker
+    - setDateAccessed
+```
+
+Each inspector may have additional configuration properties.
+
+#### Sam Checker Inspector
 By using the Sam Checker inspector, the Listener can be configured to allow access only for users
 that have write access to a specific Sam resource.
+
+##### Configuration Properties
 
 `listener.samInspectorProperties.samUrl`: URL to the Sam instance we should talk to
 
@@ -55,6 +69,19 @@ that have write access to a specific Sam resource.
 Defaults to `controlled-application-private-workspace-resource`, which corresponds Leo-managed resources.
 
 `listener.samInspectorProperties.samAction`: The Sam action to check. Default value is `write`
+
+#### Set Date Accessed Inspector
+
+The `setDateAccessed` inspector enables a callback to Leo using the auth token of the user.
+Leo uses this call to determine if the runtime instance has been accessed recently and determine if auto-pausing is required.
+
+
+##### Configuration Properties
+`listener.setDateAccessedInspectorProperties.serviceHost`: Leo server host.
+`listener.setDateAccessedInspectorProperties.workspaceId`: ID of the workspace containing the runtime instance.
+`listener.setDateAccessedInspectorProperties.callWindowInSeconds`: The time window in seconds in which, at the most, one call is made to the endpoint regardless of the number of requests made during that period.
+`listener.setDateAccessedInspectorProperties.runtimeName` : Runtime name of the instance associated with the listener this value is part of the request to Leo.
+
 
 ## Running Jupyter Notebooks
 

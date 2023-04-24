@@ -4,7 +4,6 @@ import com.microsoft.azure.relay.HybridConnectionChannel;
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
 import org.broadinstitute.listener.relay.http.ListenerConnectionHandler;
 import org.broadinstitute.listener.relay.http.RelayedHttpRequestProcessor;
-import org.broadinstitute.listener.relay.http.TargetHttpResponse;
 import org.broadinstitute.listener.relay.wss.ConnectionsPair;
 import org.broadinstitute.listener.relay.wss.WebSocketConnectionsHandler;
 import org.broadinstitute.listener.relay.wss.WebSocketConnectionsRelayerService;
@@ -92,16 +91,12 @@ public class RelayedRequestPipeline {
                             return httpRequestProcessor.executeRequestOnTarget(c);
                           }
                           httpRequestProcessor.writeNotAcceptedResponseOnCaller(c);
-
-                          return Mono.empty();
+                          return null;
                         })
                     .subscribeOn(scheduler))
         .flatMap(
             (r) ->
-                Mono.fromCallable(
-                        () ->
-                            httpRequestProcessor.writeTargetResponseOnCaller(
-                                (TargetHttpResponse) r))
+                Mono.fromCallable(() -> httpRequestProcessor.writeTargetResponseOnCaller(r))
                     .subscribeOn(scheduler))
         .doOnError(ex -> logger.error("Failed to process the request.", ex))
         .subscribe(

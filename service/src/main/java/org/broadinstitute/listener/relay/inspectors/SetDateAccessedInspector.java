@@ -102,7 +102,8 @@ public class SetDateAccessedInspector implements RequestInspector {
         updateLastAccessedDate();
       }
     } catch (RuntimeException ex) {
-      logger.error("Failed to set the last accessed date. The request still will get processed", ex);
+      logger.error(
+          "Failed to set the last accessed date. The request still will get processed", ex);
     }
 
     return true;

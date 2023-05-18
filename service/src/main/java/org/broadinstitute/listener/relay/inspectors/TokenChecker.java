@@ -41,12 +41,27 @@ public class TokenChecker {
     }
   }
 
+  public Optional<String> getClaim(String token, String claim) {
+    try {
+      var decoded = JWT.decode(token);
+      var claimValue = decoded.getClaim(claim);
+      if (claimValue.isNull()) {
+        return Optional.empty();
+      }
+
+      return Optional.of(claimValue.asString());
+    } catch (com.auth0.jwt.exceptions.JWTDecodeException e) {
+      logger.info("Fail to decode JWT", e);
+      return Optional.empty();
+    }
+  }
+
   private Optional<Instant> tryDecodeAsB2cToken(String token) {
     try {
       var decoded = JWT.decode(token);
       return Optional.of(decoded.getExpiresAt().toInstant());
     } catch (com.auth0.jwt.exceptions.JWTDecodeException e) {
-      logger.debug("Fail to check decode JWT", e);
+      logger.debug("Fail to decode JWT", e);
       return Optional.empty();
     }
   }

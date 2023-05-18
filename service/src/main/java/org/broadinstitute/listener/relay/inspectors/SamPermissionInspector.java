@@ -2,9 +2,7 @@ package org.broadinstitute.listener.relay.inspectors;
 
 import com.microsoft.azure.relay.RelayedHttpListenerRequest;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Map;
-import java.util.Optional;
 import org.broadinstitute.listener.relay.Utils;
 import org.broadinstitute.listener.relay.inspectors.InspectorType.InspectorNameConstants;
 import org.slf4j.Logger;
@@ -39,7 +37,7 @@ public class SamPermissionInspector implements RequestInspector {
       return false;
     }
 
-    var leoToken = getToken(headers);
+    var leoToken = Utils.getToken(headers);
 
     if (leoToken.isEmpty()) {
       logger.error("No valid token found");
@@ -53,21 +51,5 @@ public class SamPermissionInspector implements RequestInspector {
   public boolean checkCachedPermission(String accessToken) {
     var expiresAt = samResourceClient.checkPermission(accessToken);
     return expiresAt.isAfter(Instant.now());
-  }
-
-  protected Optional<String> getToken(Map<String, String> headers) {
-    return getTokenFromCookie(headers).or(() -> Utils.getTokenFromAuthorization(headers));
-  }
-
-  protected Optional<String> getTokenFromCookie(Map<String, String> headers) {
-    var cookieValue = headers.getOrDefault("cookie", headers.get("Cookie"));
-
-    String[] splitted =
-        Optional.ofNullable(cookieValue).map(s -> s.split(";")).orElse(new String[0]);
-
-    return Arrays.stream(splitted)
-        .filter(s -> s.contains(String.format("%s=", Utils.TOKEN_NAME)))
-        .findFirst()
-        .map(s -> s.split("=")[1]);
   }
 }

@@ -1,11 +1,15 @@
 package org.broadinstitute.listener.relay.inspectors;
 
 import com.microsoft.azure.relay.RelayedHttpListenerRequest;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
+import org.broadinstitute.listener.relay.Utils;
 import org.broadinstitute.listener.relay.inspectors.InspectorType.InspectorNameConstants;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
@@ -20,27 +24,69 @@ public class HeaderLoggerInspector implements RequestInspector {
   @Override
   public boolean inspectWebSocketUpgradeRequest(
       @NonNull RelayedHttpListenerRequest relayedHttpListenerRequest) {
-
-    logger.debug("WebSocket Upgrade Request: {}", relayedHttpListenerRequest.getUri());
-
-    logHeaders(relayedHttpListenerRequest.getHeaders());
-
+    logRequest(relayedHttpListenerRequest, OffsetDateTime.now(), "WEBSOCKET_UPGRADE_REQUEST");
     return true;
   }
 
   @Override
   public boolean inspectRelayedHttpRequest(
       @NonNull RelayedHttpListenerRequest relayedHttpListenerRequest) {
-
-    logger.debug("HTTP Request: {}", relayedHttpListenerRequest.getUri());
-
-    logHeaders(relayedHttpListenerRequest.getHeaders());
-
+    logRequest(relayedHttpListenerRequest, OffsetDateTime.now(), "HTTP_REQUEST");
     return true;
   }
 
-  private void logHeaders(Map<String, String> headers) {
+  @VisibleForTesting
+  public void logRequest(
+      RelayedHttpListenerRequest relayedHttpListenerRequest,
+      OffsetDateTime requestTimestamp,
+      String prefix) {
+    var headers = relayedHttpListenerRequest.getHeaders();
+    var referer = headers.getOrDefault("Referer", "");
+    var origin = headers.getOrDefault("Origin", "");
+    var ua = headers.getOrDefault("User-Agent", "");
+    var sub = getTokenClaim(relayedHttpListenerRequest.getHeaders(), "sub").orElse("");
 
+    // get the idtyp so we can log if the request was made by a uami (i.e,. the value is "app")
+    var idTyp = getTokenClaim(relayedHttpListenerRequest.getHeaders(), "idtyp").orElse("");
+
+    String endpoint = "";
+    if (relayedHttpListenerRequest.getRemoteEndPoint() != null) {
+      endpoint = relayedHttpListenerRequest.getRemoteEndPoint().toString();
+    }
+
+    logger.info(
+        "{} {} {} '{} {}' {} {} {} '{}' {}",
+        prefix,
+        sub,
+        idTyp,
+        relayedHttpListenerRequest.getHttpMethod(),
+        relayedHttpListenerRequest.getUri(),
+        requestTimestamp,
+        referer,
+        origin,
+        ua,
+        endpoint);
+
+    logHeaders(relayedHttpListenerRequest.getHeaders());
+  }
+
+  private Optional<String> getTokenClaim(Map<String, String> headers, String claim) {
+    if (headers == null) {
+      logger.error("No auth headers found");
+      return Optional.empty();
+    }
+
+    var rawToken = Utils.getToken(headers);
+    if (rawToken.isEmpty()) {
+      logger.error("No valid token found");
+      return Optional.empty();
+    } else {
+      TokenChecker checker = new TokenChecker();
+      return checker.getClaim(rawToken.get(), claim);
+    }
+  }
+
+  private void logHeaders(Map<String, String> headers) {
     if (headers == null) {
       return;
     }

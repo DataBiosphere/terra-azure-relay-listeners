@@ -9,6 +9,7 @@ import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static com.google.common.net.HttpHeaders.CONTENT_SECURITY_POLICY;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import org.broadinstitute.listener.config.CorsSupportProperties;
@@ -46,5 +47,21 @@ public class Utils {
         CONTENT_SECURITY_POLICY, corsSupportProperties.contentSecurityPolicy());
     responseHeaders.putIfAbsent(ACCESS_CONTROL_ALLOW_HEADERS, corsSupportProperties.allowHeaders());
     responseHeaders.putIfAbsent(ACCESS_CONTROL_MAX_AGE, corsSupportProperties.maxAge());
+  }
+
+  public static Optional<String> getToken(Map<String, String> headers) {
+    return Utils.getTokenFromCookie(headers).or(() -> Utils.getTokenFromAuthorization(headers));
+  }
+
+  private static Optional<String> getTokenFromCookie(Map<String, String> headers) {
+    var cookieValue = headers.getOrDefault("cookie", headers.get("Cookie"));
+
+    String[] splitted =
+        Optional.ofNullable(cookieValue).map(s -> s.split(";")).orElse(new String[0]);
+
+    return Arrays.stream(splitted)
+        .filter(s -> s.contains(String.format("%s=", Utils.TOKEN_NAME)))
+        .findFirst()
+        .map(s -> s.split("=")[1]);
   }
 }

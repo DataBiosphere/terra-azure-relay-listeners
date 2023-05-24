@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.TreeMap;
 import org.apache.commons.lang3.StringUtils;
 import org.broadinstitute.listener.relay.Utils;
 import org.broadinstitute.listener.relay.inspectors.InspectorType.InspectorNameConstants;
@@ -40,7 +41,11 @@ public class HeaderLoggerInspector implements RequestInspector {
       RelayedHttpListenerRequest relayedHttpListenerRequest,
       OffsetDateTime requestTimestamp,
       String prefix) {
-    var headers = relayedHttpListenerRequest.getHeaders();
+
+    // HTTP headers are case-insensitive
+    var headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    headers.putAll(relayedHttpListenerRequest.getHeaders());
+
     var referer = headers.getOrDefault("Referer", "");
     var origin = headers.getOrDefault("Origin", "");
     var ua = headers.getOrDefault("User-Agent", "");

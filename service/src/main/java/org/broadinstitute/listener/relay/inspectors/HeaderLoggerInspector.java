@@ -68,9 +68,9 @@ public class HeaderLoggerInspector implements RequestInspector {
 
     logger.info(
         "{} {} {} {} {} '{} {}' {} {} {} '{}' {}",
+        prefix,
         relayedHttpListenerResponse.getStatusCode(),
         contentLength,
-        prefix,
         sub,
         idTyp,
         relayedHttpListenerRequest.getHttpMethod(),
@@ -110,7 +110,7 @@ public class HeaderLoggerInspector implements RequestInspector {
       if (isMaskedValue(header.getKey())) {
         value = "*******";
       }
-      logger.debug("Header: {} Value:{}", header.getKey(), value);
+      logger.info("Header: {} Value:{}", header.getKey(), value);
     }
   }
 

@@ -13,12 +13,14 @@ import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.broadinstitute.listener.config.CorsSupportProperties;
 import org.broadinstitute.listener.relay.Utils;
+import org.broadinstitute.listener.relay.inspectors.HeaderLoggerInspector;
 import org.broadinstitute.listener.relay.inspectors.TokenChecker;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.slf4j.Logger;
@@ -192,6 +194,13 @@ public class RelayedHttpRequestProcessor {
 
       removeHeadersNotAcceptedByAzureRelay(listenerResponse.getHeaders());
     }
+
+    var foo = new HeaderLoggerInspector();
+    foo.logRequest(
+        targetResponse.getContext().getRequest(),
+        targetResponse.getContext().getResponse(),
+        OffsetDateTime.now(),
+        "LOGGING_TEST");
 
     OutputStream outputStream = targetResponse.getCallerResponseOutputStream();
 

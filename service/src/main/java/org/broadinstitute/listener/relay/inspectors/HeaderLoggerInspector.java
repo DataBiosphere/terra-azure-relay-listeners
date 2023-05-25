@@ -1,6 +1,7 @@
 package org.broadinstitute.listener.relay.inspectors;
 
 import com.microsoft.azure.relay.RelayedHttpListenerRequest;
+import com.microsoft.azure.relay.RelayedHttpListenerResponse;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -25,22 +26,26 @@ public class HeaderLoggerInspector implements RequestInspector {
   @Override
   public boolean inspectWebSocketUpgradeRequest(
       @NonNull RelayedHttpListenerRequest relayedHttpListenerRequest) {
-    logRequest(relayedHttpListenerRequest, OffsetDateTime.now(), "WEBSOCKET_UPGRADE_REQUEST");
+    logRequest(relayedHttpListenerRequest, null, OffsetDateTime.now(), "WEBSOCKET_UPGRADE_REQUEST");
     return true;
   }
 
   @Override
   public boolean inspectRelayedHttpRequest(
       @NonNull RelayedHttpListenerRequest relayedHttpListenerRequest) {
-    logRequest(relayedHttpListenerRequest, OffsetDateTime.now(), "HTTP_REQUEST");
+    logRequest(relayedHttpListenerRequest, null, OffsetDateTime.now(), "HTTP_REQUEST");
     return true;
   }
 
   @VisibleForTesting
   public void logRequest(
       RelayedHttpListenerRequest relayedHttpListenerRequest,
+      RelayedHttpListenerResponse relayedHttpListenerResponse,
       OffsetDateTime requestTimestamp,
       String prefix) {
+    if (relayedHttpListenerResponse == null) {
+      return;
+    }
 
     // HTTP headers are case-insensitive
     var headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
@@ -59,8 +64,12 @@ public class HeaderLoggerInspector implements RequestInspector {
       endpoint = relayedHttpListenerRequest.getRemoteEndPoint().toString();
     }
 
+    var contentLength = relayedHttpListenerResponse.getHeaders().getOrDefault("Content-Length", "");
+
     logger.info(
-        "{} {} {} '{} {}' {} {} {} '{}' {}",
+        "{} {} {} {} {} '{} {}' {} {} {} '{}' {}",
+        relayedHttpListenerResponse.getStatusCode(),
+        contentLength,
         prefix,
         sub,
         idTyp,

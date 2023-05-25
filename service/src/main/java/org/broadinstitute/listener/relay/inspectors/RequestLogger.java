@@ -1,7 +1,7 @@
 package org.broadinstitute.listener.relay.inspectors;
 
 import com.microsoft.azure.relay.RelayedHttpListenerRequest;
-import com.microsoft.azure.relay.RelayedHttpListenerResponse;
+import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -10,69 +10,53 @@ import java.util.Optional;
 import java.util.TreeMap;
 import org.apache.commons.lang3.StringUtils;
 import org.broadinstitute.listener.relay.Utils;
-import org.broadinstitute.listener.relay.inspectors.InspectorType.InspectorNameConstants;
-import org.jetbrains.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.lang.NonNull;
-import org.springframework.stereotype.Component;
 
-@Component(InspectorNameConstants.HEADERS_LOGGER)
-public class HeaderLoggerInspector implements RequestInspector {
+public class RequestLogger {
 
-  private final Logger logger = LoggerFactory.getLogger(HeaderLoggerInspector.class);
+  private final Logger logger = LoggerFactory.getLogger(RequestLogger.class);
   private static final List<String> MUST_MASKED_HEADER_NAMES = List.of("Authorization", "Cookie");
 
-  @Override
-  public boolean inspectWebSocketUpgradeRequest(
-      @NonNull RelayedHttpListenerRequest relayedHttpListenerRequest) {
-    logRequest(relayedHttpListenerRequest, null, OffsetDateTime.now(), "WEBSOCKET_UPGRADE_REQUEST");
-    return true;
-  }
-
-  @Override
-  public boolean inspectRelayedHttpRequest(
-      @NonNull RelayedHttpListenerRequest relayedHttpListenerRequest) {
-    logRequest(relayedHttpListenerRequest, null, OffsetDateTime.now(), "HTTP_REQUEST");
-    return true;
-  }
-
-  @VisibleForTesting
+  /**
+   * Logs a relayed HTTP request with the result status code
+   *
+   * @param relayedHttpListenerRequest Relayed request
+   * @param statusCode Result of the request
+   * @param requestTimestamp Timestamp of the request
+   * @param prefix Logging prefix to include
+   * @throws IOException
+   * @throws InterruptedException
+   */
   public void logRequest(
       RelayedHttpListenerRequest relayedHttpListenerRequest,
-      RelayedHttpListenerResponse relayedHttpListenerResponse,
+      int statusCode,
       OffsetDateTime requestTimestamp,
-      String prefix) {
-    if (relayedHttpListenerResponse == null) {
-      return;
-    }
+      String prefix)
+      throws IOException, InterruptedException {
 
     // HTTP headers are case-insensitive
-    var headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    var headers = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
     headers.putAll(relayedHttpListenerRequest.getHeaders());
 
     var referer = headers.getOrDefault("Referer", "");
     var origin = headers.getOrDefault("Origin", "");
     var ua = headers.getOrDefault("User-Agent", "");
-    var sub = getTokenClaim(relayedHttpListenerRequest.getHeaders(), "sub").orElse("");
-
-    // get the idtyp so we can log if the request was made by a uami (i.e,. the value is "app")
-    var idTyp = getTokenClaim(relayedHttpListenerRequest.getHeaders(), "idtyp").orElse("");
 
     String endpoint = "";
     if (relayedHttpListenerRequest.getRemoteEndPoint() != null) {
       endpoint = relayedHttpListenerRequest.getRemoteEndPoint().toString();
     }
+    var claims = getTokenClaims(headers);
 
-    var contentLength = relayedHttpListenerResponse.getHeaders().getOrDefault("Content-Length", "");
-
+    // log in a single apache-ish line
     logger.info(
         "{} {} {} {} {} '{} {}' {} {} {} '{}' {}",
         prefix,
-        relayedHttpListenerResponse.getStatusCode(),
-        contentLength,
-        sub,
-        idTyp,
+        statusCode,
+        claims.getOrDefault("email", ""),
+        claims.getOrDefault("sub", ""),
+        claims.getOrDefault("idtyp", ""),
         relayedHttpListenerRequest.getHttpMethod(),
         relayedHttpListenerRequest.getUri(),
         requestTimestamp,
@@ -84,7 +68,18 @@ public class HeaderLoggerInspector implements RequestInspector {
     logHeaders(relayedHttpListenerRequest.getHeaders());
   }
 
-  private Optional<String> getTokenClaim(Map<String, String> headers, String claim) {
+  private Map<String, String> getTokenClaims(Map<String, String> headers)
+      throws IOException, InterruptedException {
+    var tokenChecker = new TokenChecker(new GoogleTokenInfoClient());
+    var maybeToken = getToken(headers);
+    if (maybeToken.isPresent()) {
+      return tokenChecker.getOauthInfo(maybeToken.get()).claims();
+    }
+
+    return Map.of();
+  }
+
+  private Optional<String> getToken(Map<String, String> headers) {
     if (headers == null) {
       logger.error("No auth headers found");
       return Optional.empty();
@@ -95,8 +90,7 @@ public class HeaderLoggerInspector implements RequestInspector {
       logger.error("No valid token found");
       return Optional.empty();
     } else {
-      TokenChecker checker = new TokenChecker();
-      return checker.getClaim(rawToken.get(), claim);
+      return rawToken;
     }
   }
 
@@ -110,7 +104,7 @@ public class HeaderLoggerInspector implements RequestInspector {
       if (isMaskedValue(header.getKey())) {
         value = "*******";
       }
-      logger.info("Header: {} Value:{}", header.getKey(), value);
+      logger.debug("Header: {} Value:{}", header.getKey(), value);
     }
   }
 

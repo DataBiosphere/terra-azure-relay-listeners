@@ -32,6 +32,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import org.broadinstitute.listener.config.CorsSupportProperties;
 import org.broadinstitute.listener.relay.InvalidRelayTargetException;
+import org.broadinstitute.listener.relay.inspectors.GoogleTokenInfoClient;
 import org.broadinstitute.listener.relay.inspectors.TokenChecker;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.junit.jupiter.api.BeforeEach;
@@ -83,7 +84,7 @@ class RelayedHttpRequestProcessorTest {
             httpClient,
             targetHostResolver,
             new CorsSupportProperties("dummy", "dummy", "dummy", "dummy"),
-            new TokenChecker());
+            new TokenChecker(new GoogleTokenInfoClient()));
   }
 
   @Test

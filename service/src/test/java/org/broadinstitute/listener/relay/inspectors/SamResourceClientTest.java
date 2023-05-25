@@ -36,7 +36,8 @@ class SamResourceClientTest {
   @Test
   void checkPermission_success() throws IOException, InterruptedException, ApiException {
     var expiresAt = Instant.now().plusSeconds(100);
-    var oauthResponse = new OauthInfo(Optional.of(expiresAt), "");
+    var oauthResponse =
+        new OauthInfo(Optional.of(expiresAt), "", Map.of("email", "example@example.com"));
     when(tokenChecker.getOauthInfo(any())).thenReturn(oauthResponse);
     var apiResponse = new ApiResponse(200, Map.of(), true);
     when(apiClient.execute(any(), any())).thenReturn(apiResponse);
@@ -49,7 +50,11 @@ class SamResourceClientTest {
 
   @Test
   void checkPermission_token_expired() throws IOException, InterruptedException {
-    var oauthResponse = new OauthInfo(Optional.of(Instant.now().minusSeconds(100)), "");
+    var oauthResponse =
+        new OauthInfo(
+            Optional.of(Instant.now().minusSeconds(100)),
+            "",
+            Map.of("email", "example@example.com"));
     when(tokenChecker.getOauthInfo(any())).thenReturn(oauthResponse);
 
     var res = samResourceClient.checkPermission("accessToken");

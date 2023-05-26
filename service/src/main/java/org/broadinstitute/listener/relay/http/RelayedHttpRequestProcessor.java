@@ -3,6 +3,7 @@ package org.broadinstitute.listener.relay.http;
 import static com.google.common.net.HttpHeaders.SET_COOKIE;
 
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
+import com.microsoft.azure.relay.RelayedHttpListenerRequest;
 import com.microsoft.azure.relay.RelayedHttpListenerResponse;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,12 +14,14 @@ import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.broadinstitute.listener.config.CorsSupportProperties;
 import org.broadinstitute.listener.relay.Utils;
+import org.broadinstitute.listener.relay.inspectors.RequestLogger;
 import org.broadinstitute.listener.relay.inspectors.TokenChecker;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.slf4j.Logger;
@@ -193,6 +196,8 @@ public class RelayedHttpRequestProcessor {
       removeHeadersNotAcceptedByAzureRelay(listenerResponse.getHeaders());
     }
 
+    logRequest(targetResponse.getContext().getRequest(), targetResponse.getStatusCode());
+
     OutputStream outputStream = targetResponse.getCallerResponseOutputStream();
 
     Result result = Result.SUCCESS;
@@ -220,6 +225,15 @@ public class RelayedHttpRequestProcessor {
     }
 
     return result;
+  }
+
+  private void logRequest(RelayedHttpListenerRequest request, int statusCode) {
+    var requestLogger = new RequestLogger();
+    try {
+      requestLogger.logRequest(request, statusCode, OffsetDateTime.now(), "RELAY_REQUEST_RESPONSE");
+    } catch (IOException | InterruptedException e) {
+      logger.error("Error logging response", e);
+    }
   }
 
   private void removeHeadersNotAcceptedByAzureRelay(Map<String, String> headers) {

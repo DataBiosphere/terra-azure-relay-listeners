@@ -19,8 +19,6 @@ import org.broadinstitute.listener.relay.inspectors.SetDateAccessedInspectorOpti
 import org.broadinstitute.listener.relay.inspectors.TokenChecker;
 import org.broadinstitute.listener.relay.transport.DefaultTargetResolver;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.annotation.EnableCaching;
@@ -32,8 +30,6 @@ import org.springframework.context.annotation.Configuration;
 @EnableCaching
 public class AppConfiguration {
   @Autowired private ListenerProperties properties;
-
-  private final Logger logger = LoggerFactory.getLogger(AppConfiguration.class);
 
   @Bean
   public TargetResolver targetResolver() {
@@ -90,13 +86,7 @@ public class AppConfiguration {
     if (properties.getRequestInspectors() != null) {
       properties
           .getRequestInspectors()
-          .forEach(
-              i -> {
-                logger.info("Adding request inspector {}", i.getInspectorName());
-                inspectors.add(inspectorLocator.getInspector(i));
-              });
-    } else {
-      logger.info("No request inspectors configured for application.");
+          .forEach(i -> inspectors.add(inspectorLocator.getInspector(i)));
     }
 
     return new InspectorsProcessor(inspectors);

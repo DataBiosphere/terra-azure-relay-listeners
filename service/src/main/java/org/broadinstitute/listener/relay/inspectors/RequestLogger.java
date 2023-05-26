@@ -34,6 +34,10 @@ public class RequestLogger {
       OffsetDateTime requestTimestamp,
       String prefix)
       throws IOException, InterruptedException {
+    if (relayedHttpListenerRequest == null) {
+      logger.warn("Null request provided for logging");
+      return;
+    }
 
     // HTTP headers are case-insensitive
     var headers = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);

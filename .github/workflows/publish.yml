@@ -1,4 +1,4 @@
-name: Publish and deploy
+name: Build, Test and Publish
 on:
   push:
   workflow_dispatch:
@@ -8,7 +8,7 @@ env:
   ACR_REGISTRY: terradevacrpublic.azurecr.io
 
 jobs:
-  publish-job:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -17,6 +17,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'gradle'
 
       - name: Cache Gradle packages
         uses: actions/cache@v2
@@ -29,6 +30,28 @@ jobs:
       - name: Gradle build service
         run: ./gradlew --build-cache :service:build -x test
 
+  unit-tests:
+    needs: [ build ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        # Needed by sonar to get the git history for the branch the PR will be merged into.
+        with:
+          fetch-depth: 0
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+      - name: Test with coverage
+        run: ./gradlew --build-cache --scan test
+
+  publish-job:
+    needs: [ build ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
       - name: Set commit short hash
         id: setHash
         run: |
@@ -40,6 +63,13 @@ jobs:
         id: image-name
         # TODO: update the tag
         run: echo ::set-output name=name::${ACR_REGISTRY}/${SERVICE_NAME}:${{ steps.setHash.outputs.git_short_sha }}
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
 
       - name: Build image locally with jib
         run: |

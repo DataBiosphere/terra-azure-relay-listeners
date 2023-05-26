@@ -62,7 +62,7 @@ public class TokenChecker {
   private Optional<DecodedJWT> tryDecodeAsB2CToken(String token) {
     try {
       var decoded = JWT.decode(token);
-      return Optional.of(decoded); // .getExpiresAt().toInstant());
+      return Optional.of(decoded);
     } catch (com.auth0.jwt.exceptions.JWTDecodeException e) {
       logger.debug("Fail to decode JWT", e);
       return Optional.empty();

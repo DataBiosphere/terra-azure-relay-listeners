@@ -59,6 +59,6 @@ public class RequestLoggerTest {
     assertThat(
         msgs.get(0).getFormattedMessage(),
         equalTo(
-            "HTTP_REQUEST 200 example@example.com 123ABC app 'GET sb://lzexample.servicebus.windows.net/wds-example-example' 2023-05-23T10:23:22.256527-04:00 http://example.com/referer  'Mozilla/5.0 (Macintosh Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML,like Gecko) Chrome/113.0.0.0 Safari/537.36' /127.0.0.1:65535"));
+            "HTTP_REQUEST 127.0.0.1 123ABC \"example@example.com\" [2023-05-23T10:23:22.256527-04:00] app \"GET sb://lzexample.servicebus.windows.net/wds-example-example\" 200 \"http://example.com/referer\" \"-\" \"Mozilla/5.0 (Macintosh Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML,like Gecko) Chrome/113.0.0.0 Safari/537.36\""));
   }
 }

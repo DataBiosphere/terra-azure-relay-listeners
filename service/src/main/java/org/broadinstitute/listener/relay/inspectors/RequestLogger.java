@@ -43,31 +43,31 @@ public class RequestLogger {
     var headers = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
     headers.putAll(relayedHttpListenerRequest.getHeaders());
 
-    var referer = headers.getOrDefault("Referer", "");
-    var origin = headers.getOrDefault("Origin", "");
-    var ua = headers.getOrDefault("User-Agent", "");
+    var referer = headers.getOrDefault("Referer", "-");
+    var origin = headers.getOrDefault("Origin", "-");
+    var ua = headers.getOrDefault("User-Agent", "-");
 
     String endpoint = "";
     if (relayedHttpListenerRequest.getRemoteEndPoint() != null) {
-      endpoint = relayedHttpListenerRequest.getRemoteEndPoint().toString();
+      endpoint = relayedHttpListenerRequest.getRemoteEndPoint().getHostString();
     }
     var claims = getTokenClaims(headers);
 
     // log in a single apache-ish line
     logger.info(
-        "{} {} {} {} {} '{} {}' {} {} {} '{}' {}",
+        "{} {} {} \"{}\" [{}] {} \"{} {}\" {} \"{}\" \"{}\" \"{}\"",
         prefix,
-        statusCode,
-        claims.getOrDefault("email", ""),
+        endpoint,
         claims.getOrDefault("sub", ""),
+        claims.getOrDefault("email", ""),
+        requestTimestamp,
         claims.getOrDefault("idtyp", ""),
         relayedHttpListenerRequest.getHttpMethod(),
         relayedHttpListenerRequest.getUri(),
-        requestTimestamp,
+        statusCode,
         referer,
         origin,
-        ua,
-        endpoint);
+        ua);
 
     logHeaders(relayedHttpListenerRequest.getHeaders());
   }

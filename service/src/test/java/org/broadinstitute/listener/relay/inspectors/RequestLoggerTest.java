@@ -38,7 +38,7 @@ public class RequestLoggerTest {
     when(mockRequest.getHttpMethod()).thenReturn("GET");
     when(mockRequest.getUri())
         .thenReturn(new URI("sb://lzexample.servicebus.windows.net/wds-example-example"));
-    var token = TokenUtils.buildJWT(Instant.now().plusSeconds(120));
+    var token = TokenTestUtils.buildJWT(Instant.now().plusSeconds(120));
     when(mockRequest.getHeaders())
         .thenReturn(
             Map.of(

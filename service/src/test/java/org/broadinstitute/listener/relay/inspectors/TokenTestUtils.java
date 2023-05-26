@@ -5,7 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import java.time.Instant;
 import java.util.Date;
 
-public class TokenUtils {
+public class TokenTestUtils {
 
   public static String buildJWT(Instant anchor) {
     var jwt = JWT.create();

@@ -57,7 +57,7 @@ class TokenCheckerTest {
   @Test
   void checkWritePermission_b2c() throws IOException, InterruptedException {
     var anchor = LocalDateTime.parse("2023-05-23T11:50:55").toInstant(ZoneOffset.UTC);
-    var token = TokenUtils.buildJWT(anchor.plusSeconds(120));
+    var token = TokenTestUtils.buildJWT(anchor.plusSeconds(120));
     var res = tokenChecker.getOauthInfoWithAnchorTimestamp(token, anchor);
 
     assertThat(res.error(), equalTo(""));
@@ -68,7 +68,7 @@ class TokenCheckerTest {
   @Test
   void checkWritePermission_b2c_expired() throws IOException, InterruptedException {
     var anchor = LocalDateTime.parse("2023-05-23T11:50:55").toInstant(ZoneOffset.UTC);
-    var token = TokenUtils.buildJWT(anchor);
+    var token = TokenTestUtils.buildJWT(anchor);
     var res = tokenChecker.getOauthInfoWithAnchorTimestamp(token, anchor);
 
     assertThat(res.error(), equalTo("JWT expired"));

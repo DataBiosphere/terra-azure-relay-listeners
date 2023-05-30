@@ -55,7 +55,7 @@ public class RequestLogger {
 
     // log in a single apache-ish line
     logger.info(
-        "{} - {} {} \"{}\" \"-\" [{}] {} {} \"{} {} {}\" {} {} \"{}\" \"{}\" \"{}\"",
+        "{} - {} \"{}\" \"-\" {} {} \"{} {}\" {} {} \"{}\" \"{}\" \"{}\"",
         prefix,
         endpoint,
         claims.getOrDefault("sub", "-"),

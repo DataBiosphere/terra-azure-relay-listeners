@@ -1,13 +1,11 @@
 package org.broadinstitute.listener.relay.inspectors;
 
 import com.auth0.jwt.JWT;
-import com.google.gson.Gson;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import org.broadinstitute.listener.relay.OauthInfo;
 import org.slf4j.Logger;
@@ -16,43 +14,58 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class TokenChecker {
-  private final HttpClient httpClient = HttpClient.newHttpClient();
-  private final String GOOGLE_OAUTH_SERVER =
-      "https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=";
   private final Logger logger = LoggerFactory.getLogger(SamResourceClient.class);
+  private final GoogleTokenInfoClient googleTokenInfoClient;
+
+  public TokenChecker(GoogleTokenInfoClient googleTokenInfoClient) {
+    this.googleTokenInfoClient = googleTokenInfoClient;
+  }
 
   public OauthInfo getOauthInfo(String token) throws IOException, InterruptedException {
-    var jwtExpiration = tryDecodeAsB2cToken(token);
+    return getOauthInfoWithAnchorTimestamp(token, Instant.now());
+  }
 
-    var now = Instant.now();
-
-    if (jwtExpiration.isPresent()) {
-      if (jwtExpiration.get().isAfter(now)) return new OauthInfo(jwtExpiration, "");
-      else return new OauthInfo(Optional.empty(), "JWT expired");
+  public OauthInfo getOauthInfoWithAnchorTimestamp(String token, Instant anchor)
+      throws IOException, InterruptedException {
+    var jwt = tryDecodeAsB2CToken(token);
+    if (jwt.isPresent()) {
+      var jwtExpiration = jwt.get().getExpiresAt().toInstant();
+      if (jwtExpiration.isAfter(anchor)) {
+        var stringClaims = new HashMap<String, String>();
+        jwt.get().getClaims().forEach((k, v) -> stringClaims.put(k, v.asString()));
+        return new OauthInfo(Optional.of(jwtExpiration), "", stringClaims);
+      } else {
+        return new OauthInfo(Optional.empty(), "JWT expired", Map.of());
+      }
     } else {
-      var request = HttpRequest.newBuilder().uri(URI.create(GOOGLE_OAUTH_SERVER + token)).build();
-
-      var oauthInfoResponse = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-      var decoded = new Gson().fromJson(oauthInfoResponse.body(), GoogleOauthInfoResponse.class);
-
-      if (decoded.expires_in > 0)
-        return new OauthInfo(Optional.of(now.plusSeconds(decoded.expires_in)), decoded.error);
-      else return new OauthInfo(Optional.empty(), decoded.error);
+      var googleTokenInfo = googleTokenInfoClient.getTokenInfo(token);
+      if (googleTokenInfo.expires_in > 0) {
+        return new OauthInfo(
+            Optional.of(anchor.plusSeconds(googleTokenInfo.expires_in)),
+            googleTokenInfo.error,
+            claimsFromGoogleInfo(googleTokenInfo));
+      } else {
+        return new OauthInfo(Optional.empty(), googleTokenInfo.error, Map.of());
+      }
     }
   }
 
-  private Optional<Instant> tryDecodeAsB2cToken(String token) {
+  private Map<String, String> claimsFromGoogleInfo(GoogleOauthInfoResponse response) {
+    var claims = new HashMap<>(Map.of("sub", response.user_id));
+    if (response.email != null) {
+      claims.put("email", response.email);
+    }
+
+    return claims;
+  }
+
+  private Optional<DecodedJWT> tryDecodeAsB2CToken(String token) {
     try {
       var decoded = JWT.decode(token);
-      return Optional.of(decoded.getExpiresAt().toInstant());
+      return Optional.of(decoded);
     } catch (com.auth0.jwt.exceptions.JWTDecodeException e) {
-      logger.debug("Fail to check decode JWT", e);
+      logger.debug("Fail to decode JWT", e);
       return Optional.empty();
     }
   }
-}
-
-class GoogleOauthInfoResponse {
-  int expires_in;
-  String error;
 }

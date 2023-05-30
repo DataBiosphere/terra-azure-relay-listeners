@@ -15,7 +15,6 @@ public class GoogleTokenInfoClient {
   private final String GOOGLE_OAUTH_SERVER =
       "https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=";
 
-  @Cacheable("token_info")
   public GoogleOauthInfoResponse getTokenInfo(String token)
       throws IOException, InterruptedException {
     var request = HttpRequest.newBuilder().uri(URI.create(GOOGLE_OAUTH_SERVER + token)).build();

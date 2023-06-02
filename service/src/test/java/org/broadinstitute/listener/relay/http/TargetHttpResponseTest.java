@@ -11,6 +11,7 @@ import com.microsoft.azure.relay.TrackingContext;
 import java.io.ByteArrayInputStream;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,9 +59,15 @@ class TargetHttpResponseTest {
     when(context.getTrackingContext()).thenReturn(trackingContext);
     when(trackingContext.getTrackingId()).thenReturn("123abc");
 
+    List<String> validHosts =
+        new ArrayList<>() {
+          {
+            add("*");
+          }
+        };
     targetHttpResponse =
         targetHttpResponse.createTargetHttpResponseFromException(
-            500, exception, context, new CorsSupportProperties("", "", " ", ""));
+            500, exception, context, new CorsSupportProperties("", "", " ", "", validHosts));
     assertThat(targetHttpResponse.getStatusCode(), equalTo(500));
     assertThat(targetHttpResponse.getStatusDescription(), equalTo(ERR_MSG));
     assertThat(targetHttpResponse.getBody().isPresent(), equalTo(true));
@@ -74,9 +81,58 @@ class TargetHttpResponseTest {
     when(httpResponse.statusCode()).thenReturn(200);
     when(context.getRequest()).thenReturn(relayedHttpListenerRequest);
 
-    targetHttpResponse =
-        targetHttpResponse.createTargetHttpResponse(
-            httpResponse, context, new CorsSupportProperties("", "", " ", ""));
+    try {
+      List<String> validHosts =
+          new ArrayList<>() {
+            {
+              add("*");
+            }
+          };
+      targetHttpResponse =
+          targetHttpResponse.createTargetHttpResponse(
+              httpResponse, context, new CorsSupportProperties("", "", " ", "", validHosts));
+    } catch (Throwable ex) {}
+
+    assertThat(targetHttpResponse.getStatusCode(), equalTo(200));
+    assertThat(targetHttpResponse.getBody().get(), equalTo(body));
+
+    // check if response headers from the target were included in the listener's response
+    for (Entry<String, List<String>> entry : headers.entrySet()) {
+      assertThat(
+          targetHttpResponse.getHeaders().get(),
+          hasEntry(
+              entry.getKey(),
+              entry.getValue().stream().findFirst().get())); // multi-part headers are not supported
+    }
+
+    assertThat(targetHttpResponse.getContext(), equalTo(context));
+  }
+
+  @Test
+  void createLocalHttpResponse_invalidOrigin() {
+    when(httpResponse.body()).thenReturn(body);
+    when(httpHeaders.map()).thenReturn(headers);
+    when(httpResponse.headers()).thenReturn(httpHeaders);
+    when(httpResponse.statusCode()).thenReturn(200);
+    when(context.getRequest()).thenReturn(relayedHttpListenerRequest);
+    String requestOrigin = "malicious.site.com";
+    Map<String, String> requestHeaders = Map.of("Origin", requestOrigin);
+    when(context.getRequest().getHeaders()).thenReturn(requestHeaders);
+
+    try {
+      List<String> validHosts =
+          new ArrayList<>() {
+            {
+              add("app.terra.bio");
+            }
+          };
+      targetHttpResponse =
+          targetHttpResponse.createTargetHttpResponse(
+              httpResponse, context, new CorsSupportProperties("", "", " ", "", validHosts));
+    } catch (Throwable ex) {
+      assertThat("Origin exception thrown", ex.getMessage().equals(String.format("Origin %s not allowed.", requestOrigin)));
+    }
+
     assertThat(targetHttpResponse.getStatusCode(), equalTo(200));
     assertThat(targetHttpResponse.getBody().get(), equalTo(body));
 

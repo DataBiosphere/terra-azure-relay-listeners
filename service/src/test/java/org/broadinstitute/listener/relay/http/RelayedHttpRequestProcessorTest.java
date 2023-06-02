@@ -25,6 +25,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import org.broadinstitute.listener.config.CorsSupportProperties;
 import org.broadinstitute.listener.relay.InvalidRelayTargetException;
+import org.broadinstitute.listener.relay.http.RelayedHttpRequestProcessor.Result;
 import org.broadinstitute.listener.relay.inspectors.GoogleTokenInfoClient;
 import org.broadinstitute.listener.relay.inspectors.TokenChecker;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
@@ -72,6 +74,8 @@ class RelayedHttpRequestProcessorTest {
   private Map<String, List<String>> targetResponseHeaders;
   private Map<String, String> requestHeaders;
 
+  private Map<String, String> requestHeaders_invalidOrigin;
+
   @BeforeEach
   void setUp() {
     body = new ByteArrayInputStream(BODY_CONTENT.getBytes(StandardCharsets.UTF_8));
@@ -79,11 +83,22 @@ class RelayedHttpRequestProcessorTest {
     targetResponseHeaders.put("RES_HEADER", List.of("RES_VALUE"));
     requestHeaders = new HashMap<>();
     requestHeaders.put("REQ_HEADER", "REQ_VALUE");
+    requestHeaders.put("Origin", "app.terra.bio");
+
+    requestHeaders_invalidOrigin = new HashMap<>();
+    requestHeaders_invalidOrigin.put("Origin", "malicious.website.com");
+
+    List<String> validHosts =
+        new ArrayList<>() {
+          {
+            add("app.terra.bio");
+          }
+        };
     processor =
         new RelayedHttpRequestProcessor(
             httpClient,
             targetHostResolver,
-            new CorsSupportProperties("dummy", "dummy", "dummy", "dummy"),
+            new CorsSupportProperties("dummy", "dummy", "dummy", "dummy", validHosts),
             new TokenChecker(new GoogleTokenInfoClient()));
   }
 
@@ -185,6 +200,29 @@ class RelayedHttpRequestProcessorTest {
     processor.writeTargetResponseOnCaller(targetHttpResponse);
 
     verify(responseStream).close();
+  }
+
+  // Note: Unable to figure out how to properly return ResponseStream since it's in a protected
+  // package. This is why there's no tests that hit that part of the code.
+
+  @Test
+  void writePreflightResponse_Error_noResponse() throws IOException {
+    when(context.getRequest()).thenReturn(listenerRequest);
+    when(listenerRequest.getHeaders()).thenReturn(requestHeaders);
+
+    Result result = processor.writePreflightResponse(context);
+
+    assertThat("Result is Failure", result.equals(Result.FAILURE));
+  }
+
+  @Test
+  void writePreflightResponse_Error_InvalidOrigin() throws IOException {
+    when(context.getRequest()).thenReturn(listenerRequest);
+    when(listenerRequest.getHeaders()).thenReturn(requestHeaders_invalidOrigin);
+
+    Result result = processor.writePreflightResponse(context);
+
+    assertThat("Result is Failure", result.equals(Result.FAILURE));
   }
 
   private void setUpRelayedHttpRequestMock()

@@ -82,7 +82,8 @@ public class TargetHttpResponse extends HttpMessage {
   public static TargetHttpResponse createTargetHttpResponse(
       HttpResponse<?> clientHttpResponse,
       RelayedHttpListenerContext context,
-      CorsSupportProperties corsSupportProperties) {
+      CorsSupportProperties corsSupportProperties)
+      throws Exception {
     int responseStatusCode = clientHttpResponse.statusCode();
     Map<String, String> responseHeaders = new HashMap<>();
     if (clientHttpResponse.headers() != null && !clientHttpResponse.headers().map().isEmpty()) {
@@ -100,14 +101,19 @@ public class TargetHttpResponse extends HttpMessage {
                     // setcookie response from jupyter lab looks like this: set-cookie:
                     // _xsrf=2|63084c74|2d3173085f60f5a3889e8c1e1879d0a6|1654868473; expires=Sun, 10
                     // Jul 2022 13:41:13 GMT; Path=/saturn-403635c5-c58b-4bcd-b3d1-55aa5bd8919d/
-                    var cookieValue = String.format("%s; Secure; SameSite=None", headerValue);
+                    var cookieValue =
+                        String.format("%s; Secure; SameSite=None; HttpOnly", headerValue);
                     responseHeaders.put(key, cookieValue);
                   } else responseHeaders.put(key, headerValue);
                 }
               });
-
-      Utils.writeCORSHeaders(
-          responseHeaders, context.getRequest().getHeaders(), corsSupportProperties);
+      Map<String, String> requestHeaders = context.getRequest().getHeaders();
+      if (Utils.isValidOrigin(requestHeaders.getOrDefault("Origin", ""), corsSupportProperties)) {
+        Utils.writeCORSHeaders(responseHeaders, requestHeaders, corsSupportProperties);
+      } else {
+        throw new Exception(
+            String.format("Origin %s not allowed. Error Code: RHRP-003", requestHeaders.getOrDefault("Origin", "")));
+      }
     }
 
     InputStream body = (InputStream) clientHttpResponse.body();

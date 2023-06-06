@@ -130,7 +130,13 @@ public class SetDateAccessedInspector implements RequestInspector {
       throw new RuntimeException(e);
     }
 
-    logger.debug("Making a call to the last accessed date API at this URL: {}", serviceUrl);
+    logger.info("\n\tRelayed request: "
+      .concat(relayedHttpListenerRequestToString(relayedHttpListenerRequest))
+      .concat("\n\tMaking a call to the last accessed date API at this URL: ")
+      .concat(serviceUrl.toString())
+      .concat("\n\tRequest to Leo: ")
+      .concat(httpRequestToString(request))
+    );
 
     HttpResponse<String> response;
     try {
@@ -151,5 +157,23 @@ public class SetDateAccessedInspector implements RequestInspector {
 
   private synchronized void updateLastAccessedDate() {
     lastAccessedDate = lastAccessedDate.plusSeconds(callWindowInSeconds);
+  }
+
+  private String httpRequestToString(HttpRequest request) {
+    return "method: "
+      .concat(request.method())
+      .concat("\n\turi: ")
+      .concat(request.uri().toString())
+      .concat("\n\theaders: ")
+      .concat(request.headers().map().toString());
+  }
+
+  private String relayedHttpListenerRequestToString(RelayedHttpListenerRequest request) {
+    return "method: "
+      .concat(request.getHttpMethod())
+      .concat("uri: ")
+      .concat(request.getUri().toString())
+      .concat("headers: ")
+      .concat(request.getHeaders().toString());
   }
 }

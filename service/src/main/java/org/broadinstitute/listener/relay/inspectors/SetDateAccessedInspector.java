@@ -123,11 +123,11 @@ public class SetDateAccessedInspector implements RequestInspector {
               .header(
                   "Authorization",
                   "Bearer "
-                      + Utils.getTokenFromAuthorization(relayedHttpListenerRequest.getHeaders())
+                      + Utils.getToken(relayedHttpListenerRequest.getHeaders())
                           .orElseThrow(
                               () ->
                                   new RuntimeException(
-                                      "Authorization token not found in the request")))
+                                      "Leonardo token not found in request headers")))
               .build();
     } catch (URISyntaxException e) {
       logger.error("Failed to parse the URL to set the date accessed via the API", e);

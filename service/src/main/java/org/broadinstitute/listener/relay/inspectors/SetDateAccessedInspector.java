@@ -27,7 +27,7 @@ public class SetDateAccessedInspector implements RequestInspector {
   private final int callWindowInSeconds;
   private final HttpClient httpClient;
   private static final int MIN_CALL_WINDOW_IN_SECONDS = 1;
-  private static final String API_ENDPOINT_PATTERN = "%s/api/v2/runtimes/%s/%s/setDateAccessed";
+  private static final String API_ENDPOINT_PATTERN = "%s/api/v2/runtimes/%s/%s/updateDateAccessed";
 
   public SetDateAccessedInspector(SetDateAccessedInspectorOptions options)
       throws URISyntaxException, MalformedURLException {

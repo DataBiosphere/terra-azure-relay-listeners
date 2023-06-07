@@ -130,6 +130,8 @@ public class SetDateAccessedInspector implements RequestInspector {
       throw new RuntimeException(e);
     }
 
+    logger.debug("Making a call to the last accessed date API at this URL: {}", serviceUrl);
+    
     HttpResponse<String> response;
     try {
       response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());

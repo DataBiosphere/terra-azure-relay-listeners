@@ -110,10 +110,6 @@ public class SetDateAccessedInspector implements RequestInspector {
   }
 
   public void setLastAccessedDateOnService(RelayedHttpListenerRequest relayedHttpListenerRequest) {
-    logger.info("setLastAccessedDateOnService\n\tRelayed request: "
-      .concat(relayedHttpListenerRequestToString(relayedHttpListenerRequest))
-    );
-
     HttpRequest request;
     try {
       request =
@@ -134,12 +130,6 @@ public class SetDateAccessedInspector implements RequestInspector {
       throw new RuntimeException(e);
     }
 
-    logger.info("setLastAccessedDateOnService\n\tMaking a call to the last accessed date API at this URL: "
-      .concat(serviceUrl.toString())
-      .concat("\n\tRequest to Leo: ")
-      .concat(httpRequestToString(request))
-    );
-
     HttpResponse<String> response;
     try {
       response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -148,7 +138,7 @@ public class SetDateAccessedInspector implements RequestInspector {
       throw new RuntimeException(e);
     }
 
-    logger.info(
+    logger.debug(
         "The set last accessed date API call was made with the following response: {}",
         response.statusCode());
   }

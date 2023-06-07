@@ -123,7 +123,7 @@ public class SetDateAccessedInspector implements RequestInspector {
                           .orElseThrow(
                               () ->
                                   new RuntimeException(
-                                      "Leonardo token not found in request headers")))
+                                      "Authorization token not found in the request")))
               .build();
     } catch (URISyntaxException e) {
       logger.error("Failed to parse the URL to set the date accessed via the API", e);
@@ -138,7 +138,7 @@ public class SetDateAccessedInspector implements RequestInspector {
       throw new RuntimeException(e);
     }
 
-    logger.debug(
+    logger.info(
         "The set last accessed date API call was made with the following response: {}",
         response.statusCode());
   }
@@ -149,23 +149,5 @@ public class SetDateAccessedInspector implements RequestInspector {
 
   private synchronized void updateLastAccessedDate() {
     lastAccessedDate = lastAccessedDate.plusSeconds(callWindowInSeconds);
-  }
-
-  private String httpRequestToString(HttpRequest request) {
-    return "method: "
-      .concat(request.method())
-      .concat("\n\turi: ")
-      .concat(request.uri().toString())
-      .concat("\n\theaders: ")
-      .concat(request.headers().map().toString());
-  }
-
-  private String relayedHttpListenerRequestToString(RelayedHttpListenerRequest request) {
-    return "method: "
-      .concat(request.getHttpMethod())
-      .concat("uri: ")
-      .concat(request.getUri().toString())
-      .concat("headers: ")
-      .concat(request.getHeaders().toString());
   }
 }

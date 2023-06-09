@@ -37,4 +37,3 @@ listener:
     allowHeaders: "Authorization, Content-Type, Accept, Origin,X-App-Id"
     maxAge: "1728000"
     contentSecurityPolicy: "frame-ancestors http://localhost:3000;report-uri https://terra.report-uri.com/r/d/csp/reportOnly"
-    validHosts:

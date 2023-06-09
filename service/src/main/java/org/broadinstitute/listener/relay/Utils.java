@@ -1,21 +1,20 @@
 package org.broadinstitute.listener.relay;
 
-import org.broadinstitute.listener.config.CorsSupportProperties;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import java.net.MalformedURLException;
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_CREDENTIALS;
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_HEADERS;
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_METHODS;
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_MAX_AGE;
+import static com.google.common.net.HttpHeaders.AUTHORIZATION;
+import static com.google.common.net.HttpHeaders.CONTENT_SECURITY_POLICY;
+
 import java.net.URI;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
-
-import static com.google.common.net.HttpHeaders.*;
+import org.broadinstitute.listener.config.CorsSupportProperties;
 
 public class Utils {
-
-  public static final Logger logger = LoggerFactory.getLogger(Utils.class);
   public static final String TOKEN_NAME = "LeoToken";
   public static final String SET_COOKIE_API_PATH = "setcookie";
 
@@ -29,11 +28,8 @@ public class Utils {
 
   public static boolean isSetCookiePath(URI uri) {
     var splitted = uri.getPath().split("/");
-    if (splitted.length == 3) {
-      return splitted[2].toLowerCase().equals(SET_COOKIE_API_PATH);
-    } else {
-      return false;
-    }
+    if (splitted.length == 3) return splitted[2].toLowerCase().equals(SET_COOKIE_API_PATH);
+    else return false;
   }
 
   public static void writeCORSHeaders(
@@ -51,29 +47,6 @@ public class Utils {
         CONTENT_SECURITY_POLICY, corsSupportProperties.contentSecurityPolicy());
     responseHeaders.putIfAbsent(ACCESS_CONTROL_ALLOW_HEADERS, corsSupportProperties.allowHeaders());
     responseHeaders.putIfAbsent(ACCESS_CONTROL_MAX_AGE, corsSupportProperties.maxAge());
-  }
-
-  public static boolean isValidOrigin(String origin, CorsSupportProperties corsSupportProperties) {
-    String stringToCheck;
-    // We want to strip the protocol.
-    try {
-      URL url = new URL(origin);
-      stringToCheck = url.getHost();
-    } catch (MalformedURLException e) {
-      stringToCheck = origin;
-    }
-
-    logger.info(String.format("Checking origin %s", stringToCheck));
-    logger.info(corsSupportProperties.validHosts().toString());
-    // To appeal to lambda.
-    String finalStringToCheck = stringToCheck;
-    return origin.isEmpty()
-        || corsSupportProperties.validHosts().stream()
-        .anyMatch(
-            validHost ->
-                Pattern.matches(
-                    validHost.replace(".", "\\.").replace("*", ".*").replace(" ", ""),
-                    finalStringToCheck));
   }
 
   public static Optional<String> getToken(Map<String, String> headers) {

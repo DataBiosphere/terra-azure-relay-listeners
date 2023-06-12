@@ -111,6 +111,12 @@ public class RelayedHttpRequestProcessor {
   }
 
   public Result writePreflightResponse(RelayedHttpListenerContext context) {
+    Map<String, String> requestHeaders = context.getRequest().getHeaders();
+    if (!Utils.isValidOrigin(requestHeaders.getOrDefault("Origin", ""), corsSupportProperties)) {
+      logger.error(String.format("Origin %s not allowed. Error Code: RHRP-001", requestHeaders.get("Origin")));
+      return Result.FAILURE;
+    }
+
     if (context.getResponse() == null) {
       logger.error("The context did not have a valid response");
       return Result.FAILURE;
@@ -140,6 +146,15 @@ public class RelayedHttpRequestProcessor {
     if (authToken.isEmpty()) return Result.FAILURE;
     else {
       try {
+        Map<String, String> requestHeaders = context.getRequest().getHeaders();
+
+        if (!Utils.isValidOrigin(
+            requestHeaders.getOrDefault("Origin", ""), corsSupportProperties)) {
+          logger.error(
+              String.format("Origin %s not allowed. Error Code: RHRP-002", requestHeaders.getOrDefault("Origin", "")));
+          return Result.FAILURE;
+        }
+
         var oauthInfo = tokenChecker.getOauthInfo(authToken.get());
 
         var now = Instant.now();
@@ -154,7 +169,7 @@ public class RelayedHttpRequestProcessor {
             .put(
                 SET_COOKIE,
                 String.format(
-                    "%s=%s; Max-Age=%s; Path=/; Secure; SameSite=None",
+                    "%s=%s; Max-Age=%s; Path=/; Secure; SameSite=None; HttpOnly",
                     Utils.TOKEN_NAME, authToken.get(), expiresIn.orElse(0L)));
 
         Utils.writeCORSHeaders(

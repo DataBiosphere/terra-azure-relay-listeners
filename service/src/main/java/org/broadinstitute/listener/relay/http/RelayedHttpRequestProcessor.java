@@ -169,7 +169,7 @@ public class RelayedHttpRequestProcessor {
             .put(
                 SET_COOKIE,
                 String.format(
-                    "%s=%s; Max-Age=%s; Path=/; Secure; SameSite=None; HttpOnly",
+                    "%s=%s; Max-Age=%s; Path=/; Secure; SameSite=None;",
                     Utils.TOKEN_NAME, authToken.get(), expiresIn.orElse(0L)));
 
         Utils.writeCORSHeaders(

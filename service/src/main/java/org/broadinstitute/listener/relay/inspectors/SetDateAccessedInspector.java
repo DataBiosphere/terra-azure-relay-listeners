@@ -38,14 +38,13 @@ public class SetDateAccessedInspector implements RequestInspector {
     this.callWindowInSeconds = options.callWindowInSeconds();
 
     lastAccessedDate = Instant.now();
-    URIBuilder builder =
-        new URIBuilder(
-            String.format(
-                Locale.ROOT,
-                API_ENDPOINT_PATTERN,
-                options.serviceHost(),
-                options.workspaceId(),
-                options.runtimeName()));
+    URIBuilder builder = new URIBuilder(
+        String.format(
+            Locale.ROOT,
+            API_ENDPOINT_PATTERN,
+            options.serviceHost(),
+            options.workspaceId(),
+            options.runtimeName()));
 
     serviceUrl = builder.build().toURL();
   }
@@ -90,8 +89,11 @@ public class SetDateAccessedInspector implements RequestInspector {
 
   @Override
   public boolean inspectRelayedHttpRequest(RelayedHttpListenerRequest relayedHttpListenerRequest) {
-
-    return checkLastAccessDateAndCallServiceIfExpired(relayedHttpListenerRequest);
+    if (Utils.isNotGetStatusRequest(relayedHttpListenerRequest)) {
+      return checkLastAccessDateAndCallServiceIfExpired(relayedHttpListenerRequest);
+    } else {
+      logger.info("Not setting date accessed for a status request");
+    }
   }
 
   private boolean checkLastAccessDateAndCallServiceIfExpired(
@@ -112,26 +114,24 @@ public class SetDateAccessedInspector implements RequestInspector {
   public void setLastAccessedDateOnService(RelayedHttpListenerRequest relayedHttpListenerRequest) {
     HttpRequest request;
     try {
-      request =
-          HttpRequest.newBuilder()
-              .uri(serviceUrl.toURI())
-              .method("PATCH", HttpRequest.BodyPublishers.noBody())
-              .header(
-                  "Authorization",
-                  "Bearer "
-                      + Utils.getToken(relayedHttpListenerRequest.getHeaders())
-                          .orElseThrow(
-                              () ->
-                                  new RuntimeException(
-                                      "Authorization token not found in the request")))
-              .build();
+      request = HttpRequest.newBuilder()
+          .uri(serviceUrl.toURI())
+          .method("PATCH", HttpRequest.BodyPublishers.noBody())
+          .header(
+              "Authorization",
+              "Bearer "
+                  + Utils.getToken(relayedHttpListenerRequest.getHeaders())
+                      .orElseThrow(
+                          () -> new RuntimeException(
+                              "Authorization token not found in the request")))
+          .build();
     } catch (URISyntaxException e) {
       logger.error("Failed to parse the URL to set the date accessed via the API", e);
       throw new RuntimeException(e);
     }
 
     logger.debug("Making a call to the last accessed date API at this URL: {}", serviceUrl);
-    
+
     HttpResponse<String> response;
     try {
       response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -152,4 +152,5 @@ public class SetDateAccessedInspector implements RequestInspector {
   private synchronized void updateLastAccessedDate() {
     lastAccessedDate = lastAccessedDate.plusSeconds(callWindowInSeconds);
   }
+
 }

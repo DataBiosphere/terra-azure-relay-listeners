@@ -1,8 +1,7 @@
 package org.broadinstitute.listener.relay;
 
-import org.broadinstitute.listener.config.CorsSupportProperties;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.net.HttpHeaders.*;
+
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -10,8 +9,9 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
-
-import static com.google.common.net.HttpHeaders.*;
+import org.broadinstitute.listener.config.CorsSupportProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Utils {
 
@@ -58,7 +58,12 @@ public class Utils {
     // We want to strip the protocol.
     try {
       URL url = new URL(origin);
-      stringToCheck = url.getHost();
+      if (url.getPort() != -1) {
+        stringToCheck = url.getHost() + ':' + url.getPort();
+      } else {
+        stringToCheck = url.getHost();
+      }
+      logger.info(url.getPath());
     } catch (MalformedURLException e) {
       stringToCheck = origin;
     }
@@ -69,11 +74,11 @@ public class Utils {
     String finalStringToCheck = stringToCheck;
     return origin.isEmpty()
         || corsSupportProperties.validHosts().stream()
-        .anyMatch(
-            validHost ->
-                Pattern.matches(
-                    validHost.replace(".", "\\.").replace("*", ".*").replace(" ", ""),
-                    finalStringToCheck));
+            .anyMatch(
+                validHost ->
+                    Pattern.matches(
+                        validHost.replace(".", "\\.").replace("*", ".*").replace(" ", ""),
+                        finalStringToCheck));
   }
 
   public static Optional<String> getToken(Map<String, String> headers) {

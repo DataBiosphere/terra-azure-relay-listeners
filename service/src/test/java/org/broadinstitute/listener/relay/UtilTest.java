@@ -70,6 +70,18 @@ class UtilTest {
   }
 
   @Test
+  void isValidOriginWithPort_test() {
+    String allowedOrigin = "myorigin.com:3000";
+
+    CorsSupportProperties mockCorsSupportProperties =
+        new CorsSupportProperties("", "", "", "", List.of(allowedOrigin));
+
+    String originToTest = "https://myorigin.com:3000";
+    boolean isValidOrigin = Utils.isValidOrigin(originToTest, mockCorsSupportProperties);
+    assert (isValidOrigin);
+  }
+
+  @Test
   void isValidOrigin_regex_test() {
     String allowAllOrigin = "*";
     CorsSupportProperties mockCorsSupportProperties =

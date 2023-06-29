@@ -8,7 +8,6 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import org.broadinstitute.listener.config.CorsSupportProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,31 +53,26 @@ public class Utils {
   }
 
   public static boolean isValidOrigin(String origin, CorsSupportProperties corsSupportProperties) {
-    String stringToCheck;
-    // We want to strip the protocol.
-    try {
-      URL url = new URL(origin);
-      if (url.getPort() != -1) {
-        stringToCheck = url.getHost() + ':' + url.getPort();
-      } else {
-        stringToCheck = url.getHost();
-      }
-      logger.info(url.getPath());
-    } catch (MalformedURLException e) {
-      stringToCheck = origin;
+    if (corsSupportProperties.validHosts().contains("*")) {
+      return true;
     }
 
-    logger.info(String.format("Checking origin %s", stringToCheck));
-    logger.info(corsSupportProperties.validHosts().toString());
-    // To appeal to lambda.
-    String finalStringToCheck = stringToCheck;
+    String stringToCheck;
+    // We want to strip the protocol.
+    URL url;
+    try {
+      url = new URL(origin);
+    } catch (MalformedURLException e) {
+      logger.info(e.toString());
+      return false;
+    }
+
     return origin.isEmpty()
         || corsSupportProperties.validHosts().stream()
             .anyMatch(
                 validHost ->
-                    Pattern.matches(
-                        validHost.replace(".", "\\.").replace("*", ".*").replace(" ", ""),
-                        finalStringToCheck));
+                    // We still need to strip out spaces!
+                    validHost.replace(" ", "").equals(url.getAuthority()));
   }
 
   public static Optional<String> getToken(Map<String, String> headers) {

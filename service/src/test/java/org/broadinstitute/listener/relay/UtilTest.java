@@ -60,12 +60,8 @@ class UtilTest {
     CorsSupportProperties mockCorsSupportProperties =
         new CorsSupportProperties("", "", "", "", List.of(allowedOrigin));
 
-    String originToTest = "myorigin.com";
-    boolean isValidOrigin = Utils.isValidOrigin(originToTest, mockCorsSupportProperties);
-    assert (isValidOrigin);
-
-    String correctOriginWithHttps = "https://" + "myorigin.com";
-    isValidOrigin = Utils.isValidOrigin(correctOriginWithHttps, mockCorsSupportProperties);
+    String correctOrigin = "https://" + "myorigin.com";
+    boolean isValidOrigin = Utils.isValidOrigin(correctOrigin, mockCorsSupportProperties);
     assert (isValidOrigin);
   }
 
@@ -78,24 +74,6 @@ class UtilTest {
 
     String originToTest = "https://myorigin.com:3000";
     boolean isValidOrigin = Utils.isValidOrigin(originToTest, mockCorsSupportProperties);
-    assert (isValidOrigin);
-  }
-
-  @Test
-  void isValidOrigin_regex_test() {
-    String allowAllOrigin = "*";
-    CorsSupportProperties mockCorsSupportProperties =
-        new CorsSupportProperties("", "", "", "", List.of(allowAllOrigin));
-
-    String originToTest = "htttp://myorigin.csom";
-    boolean isValidOrigin = Utils.isValidOrigin(originToTest, mockCorsSupportProperties);
-    assert (isValidOrigin);
-
-    String wildCardAllowedOrigin = "*.bee.envs.terra*";
-    mockCorsSupportProperties =
-        new CorsSupportProperties("", "", "", "", List.of(wildCardAllowedOrigin));
-
-    isValidOrigin = Utils.isValidOrigin("nathan.bee.envs.terra", mockCorsSupportProperties);
     assert (isValidOrigin);
   }
 
@@ -119,5 +97,9 @@ class UtilTest {
     String validOriginWithPort = "myorigin.com:3000";
     isValidOrigin = Utils.isValidOrigin(validOriginWithPort, mockCorsSupportProperties);
     assert !isValidOrigin;
+
+    String validOriginNoProtocol = "myorigin.com";
+    isValidOrigin = Utils.isValidOrigin(validOriginNoProtocol, mockCorsSupportProperties);
+    assert (!isValidOrigin);
   }
 }

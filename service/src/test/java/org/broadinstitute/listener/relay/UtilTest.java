@@ -63,6 +63,10 @@ class UtilTest {
     String correctOrigin = "https://" + "myorigin.com";
     boolean isValidOrigin = Utils.isValidOrigin(correctOrigin, mockCorsSupportProperties);
     assert (isValidOrigin);
+
+    String correctOriginTrailingSlash = "https://" + "myorigin.com/";
+    isValidOrigin = Utils.isValidOrigin(correctOriginTrailingSlash, mockCorsSupportProperties);
+    assert (isValidOrigin);
   }
 
   @Test

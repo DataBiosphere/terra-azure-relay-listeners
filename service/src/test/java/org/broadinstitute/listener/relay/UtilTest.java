@@ -78,6 +78,44 @@ class UtilTest {
   }
 
   @Test
+  void isValidOriginEmptyOrigin_test() {
+    String allowedOrigin = "couldBeAntything";
+
+    CorsSupportProperties mockCorsSupportProperties =
+        new CorsSupportProperties("", "", "", "", List.of(allowedOrigin));
+
+    String originToTest = "";
+    boolean isValidOrigin = Utils.isValidOrigin(originToTest, mockCorsSupportProperties);
+    assert (isValidOrigin);
+  }
+
+  @Test
+  void isValidOriginWildCard_test() {
+    boolean isValidOrigin;
+    String allowedOrigin = "*";
+    CorsSupportProperties mockCorsSupportProperties =
+        new CorsSupportProperties("", "", "", "", List.of(allowedOrigin));
+
+    String invalidOrigin = "notmyorigin.com";
+
+    isValidOrigin = Utils.isValidOrigin(invalidOrigin, mockCorsSupportProperties);
+    assert (!isValidOrigin);
+
+    invalidOrigin = "myorigin.com.envs.bio";
+
+    isValidOrigin = Utils.isValidOrigin(invalidOrigin, mockCorsSupportProperties);
+    assert (!isValidOrigin);
+
+    String validOriginWithPort = "myorigin.com:3000";
+    isValidOrigin = Utils.isValidOrigin(validOriginWithPort, mockCorsSupportProperties);
+    assert !isValidOrigin;
+
+    String validOriginNoProtocol = "myorigin.com";
+    isValidOrigin = Utils.isValidOrigin(validOriginNoProtocol, mockCorsSupportProperties);
+    assert (!isValidOrigin);
+  }
+
+  @Test
   void isValidOrigin_Error_test() {
     boolean isValidOrigin;
     String allowedOrigin = "myorigin.com";

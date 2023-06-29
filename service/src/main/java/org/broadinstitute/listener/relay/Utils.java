@@ -53,11 +53,10 @@ public class Utils {
   }
 
   public static boolean isValidOrigin(String origin, CorsSupportProperties corsSupportProperties) {
-    if (corsSupportProperties.validHosts().contains("*")) {
+    if (origin.isEmpty() || corsSupportProperties.validHosts().contains("*")) {
       return true;
     }
 
-    String stringToCheck;
     // We want to strip the protocol.
     URL url;
     try {
@@ -67,12 +66,11 @@ public class Utils {
       return false;
     }
 
-    return origin.isEmpty()
-        || corsSupportProperties.validHosts().stream()
-            .anyMatch(
-                validHost ->
-                    // We still need to strip out spaces!
-                    validHost.replace(" ", "").equals(url.getAuthority()));
+    return corsSupportProperties.validHosts().stream()
+        .anyMatch(
+            validHost ->
+                // We still need to strip out spaces!
+                validHost.replace(" ", "").equals(url.getAuthority()));
   }
 
   public static Optional<String> getToken(Map<String, String> headers) {

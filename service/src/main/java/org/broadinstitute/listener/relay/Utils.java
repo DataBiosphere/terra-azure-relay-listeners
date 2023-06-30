@@ -62,7 +62,7 @@ public class Utils {
     try {
       url = new URL(origin);
     } catch (MalformedURLException e) {
-      logger.info(e.toString());
+      logger.error(String.format("Error parsing URL:%s. MalformedURLException: %s", origin, e.getMessage()));
       return false;
     }
 

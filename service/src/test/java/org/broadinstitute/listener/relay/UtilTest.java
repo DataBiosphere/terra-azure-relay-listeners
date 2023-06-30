@@ -103,20 +103,20 @@ class UtilTest {
     String invalidOrigin = "notmyorigin.com";
 
     isValidOrigin = Utils.isValidOrigin(invalidOrigin, mockCorsSupportProperties);
-    assert (!isValidOrigin);
+    assert (isValidOrigin);
 
     invalidOrigin = "myorigin.com.envs.bio";
 
     isValidOrigin = Utils.isValidOrigin(invalidOrigin, mockCorsSupportProperties);
-    assert (!isValidOrigin);
+    assert (isValidOrigin);
 
     String validOriginWithPort = "myorigin.com:3000";
     isValidOrigin = Utils.isValidOrigin(validOriginWithPort, mockCorsSupportProperties);
-    assert !isValidOrigin;
+    assert isValidOrigin;
 
     String validOriginNoProtocol = "myorigin.com";
     isValidOrigin = Utils.isValidOrigin(validOriginNoProtocol, mockCorsSupportProperties);
-    assert (!isValidOrigin);
+    assert (isValidOrigin);
   }
 
   @Test

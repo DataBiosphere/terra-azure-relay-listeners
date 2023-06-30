@@ -88,9 +88,18 @@ public class SetDateAccessedInspector implements RequestInspector {
     return checkLastAccessDateAndCallServiceIfExpired(relayedHttpListenerRequest);
   }
 
+  /**
+   * Send a request to leonardo to updateDateAccessed on our runtime, marking the last time that the
+   * Azure relay intercepted a keep-alive request. Requests which are not keep-alive (not associated
+   * with kernel or user activity) do not trigger an update of dateAccessed.
+   *
+   * @see IA-4401 Note that if future resource types (other than Jupyter and Welder) are going to be
+   *     touched in ways we don’t want to trigger keep-alive on the runtime, we will need to exempt
+   *     them explicitly in Utils.java.
+   */
   @Override
   public boolean inspectRelayedHttpRequest(RelayedHttpListenerRequest relayedHttpListenerRequest) {
-    if (Utils.isNotGetStatusRequest(relayedHttpListenerRequest)) {
+    if (Utils.isNotKeepAliveRequest(relayedHttpListenerRequest)) {
       return checkLastAccessDateAndCallServiceIfExpired(relayedHttpListenerRequest);
     } else {
       logger.info("Not setting date accessed for a status request");

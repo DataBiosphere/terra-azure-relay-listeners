@@ -39,7 +39,11 @@ public class Utils {
     }
   }
 
-  public static boolean isNotGetStatusRequest(RelayedHttpListenerRequest listenerRequest) {
+  /**
+   * Whether the request represents user or kernel activity, and should thus trigger a touch of the
+   * runtime to prevent autopause.
+   */
+  public static boolean isNotKeepAliveRequest(RelayedHttpListenerRequest listenerRequest) {
     var isGetStatusRequest =
         listenerRequest.getHttpMethod().equals("GET") && isGetStatusPath(listenerRequest.getUri());
     return !isGetStatusRequest;

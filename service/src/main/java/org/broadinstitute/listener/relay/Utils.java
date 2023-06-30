@@ -70,7 +70,7 @@ public class Utils {
         .anyMatch(
             validHost ->
                 // We still need to strip out spaces!
-                validHost.replace(" ", "").equals(url.getAuthority()));
+                validHost.trim().equals(url.getAuthority()));
   }
 
   public static Optional<String> getToken(Map<String, String> headers) {

@@ -116,7 +116,7 @@ class TargetHttpResponseTest {
     when(httpResponse.headers()).thenReturn(httpHeaders);
     when(httpResponse.statusCode()).thenReturn(200);
     when(context.getRequest()).thenReturn(relayedHttpListenerRequest);
-    String requestOrigin = "malicious.site.com";
+    String requestOrigin = "http://malicious.site.com";
     Map<String, String> requestHeaders = Map.of("Origin", requestOrigin);
     when(context.getRequest().getHeaders()).thenReturn(requestHeaders);
     List<String> validHosts = new ArrayList<String>(List.of("app.terra.bio"));
@@ -142,7 +142,7 @@ class TargetHttpResponseTest {
     when(httpResponse.headers()).thenReturn(httpHeaders);
     when(httpResponse.statusCode()).thenReturn(200);
     when(context.getRequest()).thenReturn(relayedHttpListenerRequest);
-    String requestOrigin = "app.terra.bio";
+    String requestOrigin = "http://app.terra.bio";
     Map<String, String> requestHeaders = Map.of("Origin", requestOrigin);
     when(context.getRequest().getHeaders()).thenReturn(requestHeaders);
 

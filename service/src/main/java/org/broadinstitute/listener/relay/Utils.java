@@ -62,15 +62,12 @@ public class Utils {
     try {
       url = new URL(origin);
     } catch (MalformedURLException e) {
-      logger.error(String.format("Error parsing URL:%s. MalformedURLException: %s", origin, e.getMessage()));
+      logger.error(
+          String.format("Error parsing URL:%s. MalformedURLException: %s", origin, e.getMessage()));
       return false;
     }
 
-    return corsSupportProperties.validHosts().stream()
-        .anyMatch(
-            validHost ->
-                // We still need to strip out spaces!
-                validHost.trim().equals(url.getAuthority()));
+    return corsSupportProperties.validHosts().contains(url.getAuthority());
   }
 
   public static Optional<String> getToken(Map<String, String> headers) {

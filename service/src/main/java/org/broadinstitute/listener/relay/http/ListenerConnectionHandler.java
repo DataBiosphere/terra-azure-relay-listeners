@@ -43,9 +43,8 @@ public class ListenerConnectionHandler {
   }
 
   public boolean isNotSetCookie(RelayedHttpListenerRequest listenerRequest) {
-    var isSetCookieRequest =
-        listenerRequest.getHttpMethod().equals("GET")
-            && Utils.isSetCookiePath(listenerRequest.getUri());
+    var isSetCookieRequest = listenerRequest.getHttpMethod().equals("GET")
+        && Utils.isSetCookiePath(listenerRequest.getUri());
     return !isSetCookieRequest;
   }
 
@@ -65,23 +64,22 @@ public class ListenerConnectionHandler {
   public Flux<RelayedHttpListenerContext> receiveRelayedHttpRequests() {
 
     return Flux.create(
-        sink ->
-            listener.setRequestHandler(
-                context -> {
-                  try {
-                    logger.debug(
-                        "Received HTTP request. URI: {}. Tracking ID:{} Method:{}",
-                        context.getRequest().getUri(),
-                        context.getTrackingContext().getTrackingId(),
-                        context.getRequest().getHttpMethod());
-                    sink.next(context);
-                  } catch (Throwable ex) {
-                    logger.error(
-                        "Error while creating relayed HTTP request. Tracking ID:{}",
-                        context.getTrackingContext().getTrackingId(),
-                        ex);
-                  }
-                }));
+        sink -> listener.setRequestHandler(
+            context -> {
+              try {
+                logger.debug(
+                    "Received HTTP request. URI: {}. Tracking ID:{} Method:{}",
+                    context.getRequest().getUri(),
+                    context.getTrackingContext().getTrackingId(),
+                    context.getRequest().getHttpMethod());
+                sink.next(context);
+              } catch (Throwable ex) {
+                logger.error(
+                    "Error while creating relayed HTTP request. Tracking ID:{}",
+                    context.getTrackingContext().getTrackingId(),
+                    ex);
+              }
+            }));
   }
 
   public Mono<String> openConnection() {

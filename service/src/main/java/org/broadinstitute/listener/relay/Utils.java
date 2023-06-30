@@ -1,17 +1,16 @@
 package org.broadinstitute.listener.relay;
 
-import org.broadinstitute.listener.config.CorsSupportProperties;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.net.HttpHeaders.*;
+
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
-
-import static com.google.common.net.HttpHeaders.*;
+import org.broadinstitute.listener.config.CorsSupportProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Utils {
 
@@ -54,26 +53,21 @@ public class Utils {
   }
 
   public static boolean isValidOrigin(String origin, CorsSupportProperties corsSupportProperties) {
-    String stringToCheck;
-    // We want to strip the protocol.
-    try {
-      URL url = new URL(origin);
-      stringToCheck = url.getHost();
-    } catch (MalformedURLException e) {
-      stringToCheck = origin;
+    if (origin.isEmpty() || corsSupportProperties.validHosts().contains("*")) {
+      return true;
     }
 
-    logger.info(String.format("Checking origin %s", stringToCheck));
-    logger.info(corsSupportProperties.validHosts().toString());
-    // To appeal to lambda.
-    String finalStringToCheck = stringToCheck;
-    return origin.isEmpty()
-        || corsSupportProperties.validHosts().stream()
-        .anyMatch(
-            validHost ->
-                Pattern.matches(
-                    validHost.replace(".", "\\.").replace("*", ".*").replace(" ", ""),
-                    finalStringToCheck));
+    // We want to strip the protocol.
+    URL url;
+    try {
+      url = new URL(origin);
+    } catch (MalformedURLException e) {
+      logger.error(
+          String.format("Error parsing URL:%s. MalformedURLException: %s", origin, e.getMessage()));
+      return false;
+    }
+
+    return corsSupportProperties.validHosts().contains(url.getAuthority());
   }
 
   public static Optional<String> getToken(Map<String, String> headers) {

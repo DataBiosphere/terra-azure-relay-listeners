@@ -51,11 +51,6 @@ class SetDateAccessedInspectorTest {
   void setUp() throws IOException, URISyntaxException, InterruptedException {
     headers = new HashMap<>();
     headers.put(AUTHORIZATION_HEADER, AUTH_TOKEN);
-
-    when(listenerRequest.getHeaders()).thenReturn(headers);
-
-    when(httpClient.send(any(), any())).thenReturn(httpResponse);
-
     workspaceId = UUID.randomUUID();
     options =
         new SetDateAccessedInspectorOptions(
@@ -66,6 +61,9 @@ class SetDateAccessedInspectorTest {
   @Test
   void inspectWebSocketUpgradeRequest_calledTwice_onlyOneCallToHttpClient()
       throws IOException, InterruptedException {
+    when(listenerRequest.getHeaders()).thenReturn(headers);
+    when(httpClient.send(any(), any())).thenReturn(httpResponse);
+
     inspector.inspectWebSocketUpgradeRequest(listenerRequest);
     inspector.inspectWebSocketUpgradeRequest(listenerRequest);
 
@@ -77,6 +75,8 @@ class SetDateAccessedInspectorTest {
       throws IOException, InterruptedException {
     when(listenerRequest.getHttpMethod()).thenReturn("GET");
     when(listenerRequest.getUri()).thenReturn(URI.create("http://valid.com"));
+    when(listenerRequest.getHeaders()).thenReturn(headers);
+    when(httpClient.send(any(), any())).thenReturn(httpResponse);
 
     inspector.inspectRelayedHttpRequest(listenerRequest);
     inspector.inspectRelayedHttpRequest(listenerRequest);
@@ -89,6 +89,8 @@ class SetDateAccessedInspectorTest {
       throws IOException, InterruptedException {
     when(listenerRequest.getHttpMethod()).thenReturn("GET");
     when(listenerRequest.getUri()).thenReturn(URI.create("http://valid.com"));
+    when(listenerRequest.getHeaders()).thenReturn(headers);
+    when(httpClient.send(any(), any())).thenReturn(httpResponse);
 
     inspector.inspectRelayedHttpRequest(listenerRequest);
     inspector.inspectRelayedHttpRequest(listenerRequest);
@@ -105,7 +107,9 @@ class SetDateAccessedInspectorTest {
   void inspectRelayedHttpRequest_callOnce_callToLeoHasAuthHeader()
       throws IOException, InterruptedException {
     when(listenerRequest.getHttpMethod()).thenReturn("GET");
-    when(listenerRequest.getUri()).thenReturn(URI.create("http://valid.com"));
+    when(listenerRequest.getUri()).thenReturn(URI.create("http://valid.com/do/something/else"));
+    when(listenerRequest.getHeaders()).thenReturn(headers);
+    when(httpClient.send(any(), any())).thenReturn(httpResponse);
 
     inspector.inspectRelayedHttpRequest(listenerRequest);
 
@@ -117,11 +121,35 @@ class SetDateAccessedInspectorTest {
   }
 
   @Test
+  void inspectRelayedHttpRequest_callOnce_apiStatusCallNoOp()
+      throws IOException, InterruptedException {
+    when(listenerRequest.getHttpMethod()).thenReturn("GET");
+    when(listenerRequest.getUri())
+        .thenReturn(URI.create("https://longid.servicebus.windows.net/longruntime/api/status"));
+
+    inspector.inspectRelayedHttpRequest(listenerRequest);
+
+    verify(httpClient, times(0)).send(httpRequestArgumentCaptor.capture(), any());
+  }
+
+  @Test
+  void inspectRelayedHttpRequest_callOnce_welderStatusCallNoOp()
+      throws IOException, InterruptedException {
+    when(listenerRequest.getHttpMethod()).thenReturn("GET");
+    when(listenerRequest.getUri())
+        .thenReturn(URI.create("https://longid.servicebus.windows.net/longruntime/welder/status"));
+
+    inspector.inspectRelayedHttpRequest(listenerRequest);
+
+    verify(httpClient, times(0)).send(httpRequestArgumentCaptor.capture(), any());
+  }
+
+  @Test
   void inspectRelayedHttpRequest_sendOperationThrows_returnTrue()
       throws IOException, InterruptedException {
     when(listenerRequest.getHttpMethod()).thenReturn("GET");
     when(listenerRequest.getUri()).thenReturn(URI.create("http://valid.com"));
-
+    when(listenerRequest.getHeaders()).thenReturn(headers);
     when(httpClient.send(any(), any())).thenThrow(RuntimeException.class);
 
     assertThat(inspector.inspectRelayedHttpRequest(listenerRequest), is(true));

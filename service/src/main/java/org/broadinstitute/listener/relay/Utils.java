@@ -48,7 +48,7 @@ public class Utils {
   private static boolean isGetStatusPath(URI uri) {
     var splitted = Arrays.asList(uri.getPath().split("/"));
     if (splitted.size() == 4) {
-      var tail = splitted.subList(splitted.size() - 2, splitted.size() - 1);
+      var tail = splitted.subList(splitted.size() - 2, splitted.size());
       return GET_STATUS_API_PATH.equals(tail) || GET_WELDER_STATUS_API_PATH.equals(tail);
     } else {
       return false;

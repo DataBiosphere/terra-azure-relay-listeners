@@ -112,7 +112,9 @@ public class TargetHttpResponse extends HttpMessage {
         Utils.writeCORSHeaders(responseHeaders, requestHeaders, corsSupportProperties);
       } else {
         throw new Exception(
-            String.format("Origin %s not allowed. Error Code: RHRP-003", requestHeaders.getOrDefault("Origin", "")));
+            String.format(
+                "Origin %s not allowed. Error Code: RHRP-003",
+                requestHeaders.getOrDefault("Origin", "")));
       }
     }
 

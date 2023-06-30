@@ -2,6 +2,7 @@ package org.broadinstitute.listener.relay;
 
 import static com.google.common.net.HttpHeaders.*;
 
+import com.microsoft.azure.relay.RelayedHttpListenerRequest;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -12,8 +13,6 @@ import java.util.Optional;
 import org.broadinstitute.listener.config.CorsSupportProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.google.common.net.HttpHeaders.*;
 
 public class Utils {
 
@@ -41,8 +40,8 @@ public class Utils {
   }
 
   public static boolean isNotGetStatusRequest(RelayedHttpListenerRequest listenerRequest) {
-    var isGetStatusRequest = listenerRequest.getHttpMethod().equals("GET")
-        && isGetStatusPath(listenerRequest.getUri());
+    var isGetStatusRequest =
+        listenerRequest.getHttpMethod().equals("GET") && isGetStatusPath(listenerRequest.getUri());
     return !isGetStatusRequest;
   }
 
@@ -98,7 +97,8 @@ public class Utils {
   private static Optional<String> getTokenFromCookie(Map<String, String> headers) {
     var cookieValue = headers.getOrDefault("cookie", headers.get("Cookie"));
 
-    String[] splitted = Optional.ofNullable(cookieValue).map(s -> s.split(";")).orElse(new String[0]);
+    String[] splitted =
+        Optional.ofNullable(cookieValue).map(s -> s.split(";")).orElse(new String[0]);
 
     return Arrays.stream(splitted)
         .filter(s -> s.contains(String.format("%s=", Utils.TOKEN_NAME)))

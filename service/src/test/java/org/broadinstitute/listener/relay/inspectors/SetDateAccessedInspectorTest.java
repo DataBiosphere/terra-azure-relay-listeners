@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.microsoft.azure.relay.RelayedHttpListenerRequest;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -74,6 +75,9 @@ class SetDateAccessedInspectorTest {
   @Test
   void inspectRelayedHttpRequest_calledTwice_onlyOneCallToHttpClient()
       throws IOException, InterruptedException {
+    when(listenerRequest.getHttpMethod()).thenReturn("GET");
+    when(listenerRequest.getUri()).thenReturn(URI.create("http://valid.com"));
+
     inspector.inspectRelayedHttpRequest(listenerRequest);
     inspector.inspectRelayedHttpRequest(listenerRequest);
 
@@ -83,6 +87,9 @@ class SetDateAccessedInspectorTest {
   @Test
   void inspectRelayedHttpRequest_multipleCallsOverTwoWindows_twiceCallToHttpClient()
       throws IOException, InterruptedException {
+    when(listenerRequest.getHttpMethod()).thenReturn("GET");
+    when(listenerRequest.getUri()).thenReturn(URI.create("http://valid.com"));
+
     inspector.inspectRelayedHttpRequest(listenerRequest);
     inspector.inspectRelayedHttpRequest(listenerRequest);
     inspector.inspectRelayedHttpRequest(listenerRequest);
@@ -97,6 +104,9 @@ class SetDateAccessedInspectorTest {
   @Test
   void inspectRelayedHttpRequest_callOnce_callToLeoHasAuthHeader()
       throws IOException, InterruptedException {
+    when(listenerRequest.getHttpMethod()).thenReturn("GET");
+    when(listenerRequest.getUri()).thenReturn(URI.create("http://valid.com"));
+
     inspector.inspectRelayedHttpRequest(listenerRequest);
 
     verify(httpClient, times(1)).send(httpRequestArgumentCaptor.capture(), any());
@@ -109,6 +119,9 @@ class SetDateAccessedInspectorTest {
   @Test
   void inspectRelayedHttpRequest_sendOperationThrows_returnTrue()
       throws IOException, InterruptedException {
+    when(listenerRequest.getHttpMethod()).thenReturn("GET");
+    when(listenerRequest.getUri()).thenReturn(URI.create("http://valid.com"));
+
     when(httpClient.send(any(), any())).thenThrow(RuntimeException.class);
 
     assertThat(inspector.inspectRelayedHttpRequest(listenerRequest), is(true));

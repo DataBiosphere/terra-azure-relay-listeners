@@ -99,7 +99,7 @@ public class SetDateAccessedInspector implements RequestInspector {
    */
   @Override
   public boolean inspectRelayedHttpRequest(RelayedHttpListenerRequest relayedHttpListenerRequest) {
-    if (Utils.isNotKeepAliveRequest(relayedHttpListenerRequest)) {
+    if (Utils.isKeepAliveRequest(relayedHttpListenerRequest)) {
       return checkLastAccessDateAndCallServiceIfExpired(relayedHttpListenerRequest);
     } else {
       logger.info("Not setting date accessed for a status request");

@@ -51,13 +51,16 @@ public class AppConfiguration {
   }
 
   @Bean
-  public SetDateAccessedInspectorOptions setDateAccessedInspectorOptions() {
+  public SetDateAccessedInspectorOptions setDateAccessedInspectorOptions(
+      TokenChecker tokenChecker) {
     return new SetDateAccessedInspectorOptions(
         properties.getSetDateAccessedInspectorProperties().serviceHost(),
         properties.getSetDateAccessedInspectorProperties().workspaceId(),
         properties.getSetDateAccessedInspectorProperties().callWindowInSeconds(),
         properties.getSetDateAccessedInspectorProperties().runtimeName(),
-        HttpClient.newBuilder().version(Version.HTTP_1_1).build());
+        properties.getSetDateAccessedInspectorProperties().leonardoServiceAccountEmail(),
+        HttpClient.newBuilder().version(Version.HTTP_1_1).build(),
+        tokenChecker);
   }
 
   @Bean

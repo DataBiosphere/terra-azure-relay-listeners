@@ -4,6 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,9 +36,11 @@ class SetDateAccessedInspectorTest {
   public static final String AUTH_TOKEN = "Bearer AUTH_TOKEN";
   public static final String AUTHORIZATION_HEADER = "Authorization";
   public static final String RUNTIME_NAME = "RUNTIME_NAME";
+  public static final String SA_EMAIL = "SA@EMAIL";
   @Mock private HttpClient httpClient;
   @Mock private RelayedHttpListenerRequest listenerRequest;
   @Mock private HttpResponse httpResponse;
+  @Mock private TokenChecker tokenChecker;
 
   @Captor private ArgumentCaptor<HttpRequest> httpRequestArgumentCaptor;
 
@@ -54,7 +57,13 @@ class SetDateAccessedInspectorTest {
     workspaceId = UUID.randomUUID();
     options =
         new SetDateAccessedInspectorOptions(
-            SERVICE_HOST, workspaceId, CALL_WINDOW_IN_SECONDS, RUNTIME_NAME, httpClient);
+            SERVICE_HOST,
+            workspaceId,
+            CALL_WINDOW_IN_SECONDS,
+            RUNTIME_NAME,
+            SA_EMAIL,
+            httpClient,
+            tokenChecker);
     inspector = new SetDateAccessedInspector(options);
   }
 
@@ -73,9 +82,9 @@ class SetDateAccessedInspectorTest {
   @Test
   void inspectRelayedHttpRequest_calledTwice_onlyOneCallToHttpClient()
       throws IOException, InterruptedException {
-    when(listenerRequest.getHttpMethod()).thenReturn("GET");
     when(listenerRequest.getUri()).thenReturn(URI.create("http://valid.com"));
     when(listenerRequest.getHeaders()).thenReturn(headers);
+    when(tokenChecker.isTokenForUser(any(), eq(SA_EMAIL))).thenReturn(false);
     when(httpClient.send(any(), any())).thenReturn(httpResponse);
 
     inspector.inspectRelayedHttpRequest(listenerRequest);
@@ -87,9 +96,9 @@ class SetDateAccessedInspectorTest {
   @Test
   void inspectRelayedHttpRequest_multipleCallsOverTwoWindows_twiceCallToHttpClient()
       throws IOException, InterruptedException {
-    when(listenerRequest.getHttpMethod()).thenReturn("GET");
     when(listenerRequest.getUri()).thenReturn(URI.create("http://valid.com"));
     when(listenerRequest.getHeaders()).thenReturn(headers);
+    when(tokenChecker.isTokenForUser(any(), eq(SA_EMAIL))).thenReturn(false);
     when(httpClient.send(any(), any())).thenReturn(httpResponse);
 
     inspector.inspectRelayedHttpRequest(listenerRequest);
@@ -106,9 +115,9 @@ class SetDateAccessedInspectorTest {
   @Test
   void inspectRelayedHttpRequest_callOnce_callToLeoHasAuthHeader()
       throws IOException, InterruptedException {
-    when(listenerRequest.getHttpMethod()).thenReturn("GET");
     when(listenerRequest.getUri()).thenReturn(URI.create("http://valid.com/do/something/else"));
     when(listenerRequest.getHeaders()).thenReturn(headers);
+    when(tokenChecker.isTokenForUser(any(), eq(SA_EMAIL))).thenReturn(false);
     when(httpClient.send(any(), any())).thenReturn(httpResponse);
 
     inspector.inspectRelayedHttpRequest(listenerRequest);
@@ -121,23 +130,11 @@ class SetDateAccessedInspectorTest {
   }
 
   @Test
-  void inspectRelayedHttpRequest_callOnce_apiStatusCallNoOp()
+  void inspectRelayedHttpRequest_callOnce_serviceAccountReqNoOp()
       throws IOException, InterruptedException {
-    when(listenerRequest.getHttpMethod()).thenReturn("GET");
-    when(listenerRequest.getUri())
-        .thenReturn(URI.create("https://longid.servicebus.windows.net/longruntime/api/status"));
-
-    inspector.inspectRelayedHttpRequest(listenerRequest);
-
-    verify(httpClient, times(0)).send(httpRequestArgumentCaptor.capture(), any());
-  }
-
-  @Test
-  void inspectRelayedHttpRequest_callOnce_welderStatusCallNoOp()
-      throws IOException, InterruptedException {
-    when(listenerRequest.getHttpMethod()).thenReturn("GET");
-    when(listenerRequest.getUri())
-        .thenReturn(URI.create("https://longid.servicebus.windows.net/longruntime/welder/status"));
+    when(listenerRequest.getUri()).thenReturn(URI.create("http://valid.com"));
+    when(listenerRequest.getHeaders()).thenReturn(headers);
+    when(tokenChecker.isTokenForUser(any(), eq(SA_EMAIL))).thenReturn(true);
 
     inspector.inspectRelayedHttpRequest(listenerRequest);
 
@@ -147,9 +144,9 @@ class SetDateAccessedInspectorTest {
   @Test
   void inspectRelayedHttpRequest_sendOperationThrows_returnTrue()
       throws IOException, InterruptedException {
-    when(listenerRequest.getHttpMethod()).thenReturn("GET");
     when(listenerRequest.getUri()).thenReturn(URI.create("http://valid.com"));
     when(listenerRequest.getHeaders()).thenReturn(headers);
+    when(tokenChecker.isTokenForUser(any(), eq(SA_EMAIL))).thenReturn(false);
     when(httpClient.send(any(), any())).thenThrow(RuntimeException.class);
 
     assertThat(inspector.inspectRelayedHttpRequest(listenerRequest), is(true));

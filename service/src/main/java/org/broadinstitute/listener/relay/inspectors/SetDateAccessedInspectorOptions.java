@@ -8,4 +8,6 @@ public record SetDateAccessedInspectorOptions(
     UUID workspaceId,
     int callWindowInSeconds,
     String runtimeName,
-    HttpClient httpClient) {}
+    String leonardoServiceAccountEmail,
+    HttpClient httpClient,
+    TokenChecker tokenChecker) {}

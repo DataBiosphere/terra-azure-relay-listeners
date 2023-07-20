@@ -11,6 +11,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.util.Locale;
+import java.util.Map;
 import org.apache.http.client.utils.URIBuilder;
 import org.broadinstitute.listener.relay.Utils;
 import org.broadinstitute.listener.relay.inspectors.InspectorType.InspectorNameConstants;
@@ -26,6 +27,8 @@ public class SetDateAccessedInspector implements RequestInspector {
 
   private final int callWindowInSeconds;
   private final HttpClient httpClient;
+  private final String leonardoServiceAccountEmail;
+  private final TokenChecker tokenChecker;
   private static final int MIN_CALL_WINDOW_IN_SECONDS = 1;
   private static final String API_ENDPOINT_PATTERN = "%s/api/v2/runtimes/%s/%s/updateDateAccessed";
 
@@ -36,6 +39,8 @@ public class SetDateAccessedInspector implements RequestInspector {
 
     this.httpClient = options.httpClient();
     this.callWindowInSeconds = options.callWindowInSeconds();
+    this.leonardoServiceAccountEmail = options.leonardoServiceAccountEmail();
+    this.tokenChecker = options.tokenChecker();
 
     lastAccessedDate = Instant.now();
     URIBuilder builder =
@@ -61,6 +66,11 @@ public class SetDateAccessedInspector implements RequestInspector {
               + MIN_CALL_WINDOW_IN_SECONDS);
     }
 
+    if (Strings.isNullOrEmpty(options.leonardoServiceAccountEmail())) {
+      throw new IllegalArgumentException(
+          "The service account email is missing. Please check the configuration");
+    }
+
     if (Strings.isNullOrEmpty(options.serviceHost())) {
       throw new IllegalArgumentException(
           "The service host is missing. Please check the configuration");
@@ -79,6 +89,10 @@ public class SetDateAccessedInspector implements RequestInspector {
     if (options.httpClient() == null) {
       throw new IllegalArgumentException("The http client can't be null");
     }
+
+    if (options.tokenChecker() == null) {
+      throw new IllegalArgumentException("The token checker can't be null");
+    }
   }
 
   @Override
@@ -89,21 +103,47 @@ public class SetDateAccessedInspector implements RequestInspector {
   }
 
   /**
-   * Send a request to leonardo to updateDateAccessed on our runtime, marking the last time that the
-   * Azure relay intercepted a keep-alive request. Requests which are not keep-alive (not associated
-   * with kernel or user activity) do not trigger an update of dateAccessed.
-   *
-   * @see IA-4401 Note that if future resource types (other than Jupyter and Welder) are going to be
-   *     touched in ways we don’t want to trigger keep-alive on the runtime, we will need to exempt
-   *     them explicitly in Utils.java.
+   * Inspect the request, calling Leonardo to updateDateAccessed on our resource if the request
+   * represents an action from a user other than the Leonardo service account.
    */
   @Override
   public boolean inspectRelayedHttpRequest(RelayedHttpListenerRequest relayedHttpListenerRequest) {
-    if (Utils.isKeepAliveRequest(relayedHttpListenerRequest)) {
-      return checkLastAccessDateAndCallServiceIfExpired(relayedHttpListenerRequest);
-    } else {
-      logger.info("Not setting date accessed for a status request");
+    logger.warn("DATE ACCESSED LISTENER !!! {}", relayedHttpListenerRequest.getUri());
+    logger.warn(relayedHttpListenerRequest.getHeaders().toString());
+    if (isLeonardoServiceAccountUser(relayedHttpListenerRequest)) {
+      logger.info(
+          "Not setting date accessed for a service account request to {}",
+          relayedHttpListenerRequest.getUri().toString());
       return true;
+    } else {
+      return checkLastAccessDateAndCallServiceIfExpired(relayedHttpListenerRequest);
+    }
+  }
+
+  private boolean isLeonardoServiceAccountUser(
+      RelayedHttpListenerRequest relayedHttpListenerRequest) {
+    Map<String, String> headers = relayedHttpListenerRequest.getHeaders();
+    if (headers == null) {
+      logger.error("No auth headers found");
+      return false;
+    }
+
+    var leoToken = Utils.getToken(headers);
+
+    if (leoToken.isEmpty()) {
+      logger.error("No valid token found");
+      return false;
+    } else {
+      try {
+        var token = leoToken.get();
+        return tokenChecker.isTokenForUser(token, leonardoServiceAccountEmail);
+      } catch (IOException | InterruptedException e) {
+        logger.error("Failed to check token info", e);
+        return false;
+      } catch (Exception e) {
+        logger.error("Failed for unknown reasons", e);
+        return false;
+      }
     }
   }
 

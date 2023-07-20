@@ -24,7 +24,7 @@ public class TokenChecker {
   /** Whether the provided oauth token belongs to the given email address. */
   public boolean isTokenForUser(String token, String userEmail)
       throws IOException, InterruptedException {
-    return getOauthInfo(token).claims().get("email") == userEmail;
+    return userEmail.equals(getOauthInfo(token).claims().get("email"));
   }
 
   public OauthInfo getOauthInfo(String token) throws IOException, InterruptedException {

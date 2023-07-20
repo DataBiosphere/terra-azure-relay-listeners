@@ -37,6 +37,12 @@ public class Utils {
         .map(s -> s.replaceFirst("Bearer ", "").trim());
   }
 
+  public static final Optional<String> getHost(Map<String, String> headers) {
+    var hostValue = headers.getOrDefault(HOST, null);
+
+    return Optional.ofNullable(hostValue);
+  }
+
   public static boolean isSetCookiePath(URI uri) {
     var splitted = uri.getPath().split("/");
     if (splitted.length == 3) {

@@ -66,11 +66,6 @@ public class SetDateAccessedInspector implements RequestInspector {
               + MIN_CALL_WINDOW_IN_SECONDS);
     }
 
-    if (Strings.isNullOrEmpty(options.leonardoServiceAccountEmail())) {
-      throw new IllegalArgumentException(
-          "The service account email is missing. Please check the configuration");
-    }
-
     if (Strings.isNullOrEmpty(options.serviceHost())) {
       throw new IllegalArgumentException(
           "The service host is missing. Please check the configuration");
@@ -108,16 +103,27 @@ public class SetDateAccessedInspector implements RequestInspector {
    */
   @Override
   public boolean inspectRelayedHttpRequest(RelayedHttpListenerRequest relayedHttpListenerRequest) {
-    logger.warn("DATE ACCESSED LISTENER !!! {}", relayedHttpListenerRequest.getUri());
+    logger.warn("DATE ACCESSED LISTENER !!!");
     logger.warn(relayedHttpListenerRequest.getHeaders().toString());
-    if (isLeonardoServiceAccountUser(relayedHttpListenerRequest)) {
-      logger.info(
-          "Not setting date accessed for a service account request to {}",
-          relayedHttpListenerRequest.getUri().toString());
+    if (isHostServiceUrl(relayedHttpListenerRequest)) {
+      logger.info("Not setting date accessed for a request from service host");
       return true;
     } else {
       return checkLastAccessDateAndCallServiceIfExpired(relayedHttpListenerRequest);
     }
+  }
+
+  private boolean isHostServiceUrl(RelayedHttpListenerRequest relayedHttpListenerRequest) {
+    Map<String, String> headers = relayedHttpListenerRequest.getHeaders();
+    if (headers == null) {
+      logger.error("No request headers found");
+      return false;
+    }
+
+    String requestHost = Utils.getHost(headers).get();
+    String serviceHost = serviceUrl.getHost();
+
+    return serviceHost.equals(requestHost);
   }
 
   private boolean isLeonardoServiceAccountUser(

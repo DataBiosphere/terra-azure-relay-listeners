@@ -4,7 +4,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -35,6 +34,7 @@ class SetDateAccessedInspectorTest {
   private static final String SERVICE_HOST = "http://foo.bar";
   public static final String AUTH_TOKEN = "Bearer AUTH_TOKEN";
   public static final String AUTHORIZATION_HEADER = "Authorization";
+  public static final String HOST_HEADER = "Host";
   public static final String RUNTIME_NAME = "RUNTIME_NAME";
   public static final String SA_EMAIL = "SA@EMAIL";
   @Mock private HttpClient httpClient;
@@ -47,13 +47,22 @@ class SetDateAccessedInspectorTest {
   private SetDateAccessedInspectorOptions options;
   private SetDateAccessedInspector inspector;
   private UUID workspaceId;
-
   private Map<String, String> headers;
+
+  private String getServiceHost() {
+    try {
+      return new URI(SERVICE_HOST).getHost();
+    } catch (URISyntaxException e) {
+      System.out.println("Bad host");
+      return "";
+    }
+  }
 
   @BeforeEach
   void setUp() throws IOException, URISyntaxException, InterruptedException {
     headers = new HashMap<>();
     headers.put(AUTHORIZATION_HEADER, AUTH_TOKEN);
+    headers.put(HOST_HEADER, "valid.com");
     workspaceId = UUID.randomUUID();
     options =
         new SetDateAccessedInspectorOptions(
@@ -82,9 +91,7 @@ class SetDateAccessedInspectorTest {
   @Test
   void inspectRelayedHttpRequest_calledTwice_onlyOneCallToHttpClient()
       throws IOException, InterruptedException {
-    when(listenerRequest.getUri()).thenReturn(URI.create("http://valid.com"));
     when(listenerRequest.getHeaders()).thenReturn(headers);
-    when(tokenChecker.isTokenForUser(any(), eq(SA_EMAIL))).thenReturn(false);
     when(httpClient.send(any(), any())).thenReturn(httpResponse);
 
     inspector.inspectRelayedHttpRequest(listenerRequest);
@@ -96,9 +103,7 @@ class SetDateAccessedInspectorTest {
   @Test
   void inspectRelayedHttpRequest_multipleCallsOverTwoWindows_twiceCallToHttpClient()
       throws IOException, InterruptedException {
-    when(listenerRequest.getUri()).thenReturn(URI.create("http://valid.com"));
     when(listenerRequest.getHeaders()).thenReturn(headers);
-    when(tokenChecker.isTokenForUser(any(), eq(SA_EMAIL))).thenReturn(false);
     when(httpClient.send(any(), any())).thenReturn(httpResponse);
 
     inspector.inspectRelayedHttpRequest(listenerRequest);
@@ -115,9 +120,7 @@ class SetDateAccessedInspectorTest {
   @Test
   void inspectRelayedHttpRequest_callOnce_callToLeoHasAuthHeader()
       throws IOException, InterruptedException {
-    when(listenerRequest.getUri()).thenReturn(URI.create("http://valid.com/do/something/else"));
     when(listenerRequest.getHeaders()).thenReturn(headers);
-    when(tokenChecker.isTokenForUser(any(), eq(SA_EMAIL))).thenReturn(false);
     when(httpClient.send(any(), any())).thenReturn(httpResponse);
 
     inspector.inspectRelayedHttpRequest(listenerRequest);
@@ -130,11 +133,13 @@ class SetDateAccessedInspectorTest {
   }
 
   @Test
-  void inspectRelayedHttpRequest_callOnce_serviceAccountReqNoOp()
+  void inspectRelayedHttpRequest_callOnce_serviceHostNoOp()
       throws IOException, InterruptedException {
-    when(listenerRequest.getUri()).thenReturn(URI.create("http://valid.com"));
-    when(listenerRequest.getHeaders()).thenReturn(headers);
-    when(tokenChecker.isTokenForUser(any(), eq(SA_EMAIL))).thenReturn(true);
+    Map<String, String> serviceHostHeaders = new HashMap<>();
+    serviceHostHeaders.putAll(headers);
+    serviceHostHeaders.put(HOST_HEADER, getServiceHost());
+
+    when(listenerRequest.getHeaders()).thenReturn(serviceHostHeaders);
 
     inspector.inspectRelayedHttpRequest(listenerRequest);
 
@@ -144,9 +149,7 @@ class SetDateAccessedInspectorTest {
   @Test
   void inspectRelayedHttpRequest_sendOperationThrows_returnTrue()
       throws IOException, InterruptedException {
-    when(listenerRequest.getUri()).thenReturn(URI.create("http://valid.com"));
     when(listenerRequest.getHeaders()).thenReturn(headers);
-    when(tokenChecker.isTokenForUser(any(), eq(SA_EMAIL))).thenReturn(false);
     when(httpClient.send(any(), any())).thenThrow(RuntimeException.class);
 
     assertThat(inspector.inspectRelayedHttpRequest(listenerRequest), is(true));

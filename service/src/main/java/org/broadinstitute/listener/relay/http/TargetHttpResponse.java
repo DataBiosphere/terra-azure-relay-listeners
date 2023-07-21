@@ -103,8 +103,7 @@ public class TargetHttpResponse extends HttpMessage {
                     // Jul 2022 13:41:13 GMT; Path=/saturn-403635c5-c58b-4bcd-b3d1-55aa5bd8919d/
                     var cookieValue = String.format("%s; Secure; SameSite=None;", headerValue);
                     responseHeaders.put(key, cookieValue);
-                  } else
-                    responseHeaders.put(key, headerValue);
+                  } else responseHeaders.put(key, headerValue);
                 }
               });
       Map<String, String> requestHeaders = context.getRequest().getHeaders();
@@ -112,7 +111,9 @@ public class TargetHttpResponse extends HttpMessage {
         Utils.writeCORSHeaders(responseHeaders, requestHeaders, corsSupportProperties);
       } else {
         throw new Exception(
-            String.format("Origin %s not allowed. Error Code: RHRP-003", requestHeaders.getOrDefault("Origin", "")));
+            String.format(
+                "Origin %s not allowed. Error Code: RHRP-003",
+                requestHeaders.getOrDefault("Origin", "")));
       }
     }
 

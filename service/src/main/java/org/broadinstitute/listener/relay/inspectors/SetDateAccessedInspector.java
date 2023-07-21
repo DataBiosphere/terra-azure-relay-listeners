@@ -11,6 +11,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.util.Locale;
+import java.util.Map;
 import org.apache.http.client.utils.URIBuilder;
 import org.broadinstitute.listener.relay.Utils;
 import org.broadinstitute.listener.relay.inspectors.InspectorType.InspectorNameConstants;
@@ -28,6 +29,8 @@ public class SetDateAccessedInspector implements RequestInspector {
   private final HttpClient httpClient;
   private static final int MIN_CALL_WINDOW_IN_SECONDS = 1;
   private static final String API_ENDPOINT_PATTERN = "%s/api/v2/runtimes/%s/%s/updateDateAccessed";
+  private static final String ACTION_HEADER_KEY = "X-SetDateAccessedInspector-Action";
+  private static final String ACTION_HEADER_VALUE_IGNORE = "ignore";
 
   public SetDateAccessedInspector(SetDateAccessedInspectorOptions options)
       throws URISyntaxException, MalformedURLException {
@@ -88,10 +91,32 @@ public class SetDateAccessedInspector implements RequestInspector {
     return checkLastAccessDateAndCallServiceIfExpired(relayedHttpListenerRequest);
   }
 
+  /**
+   * Inspect the request. Call Leonardo to updateDateAccessed on our resource, unless the request
+   * headers include {@code X-SetDateAccessedInspector-Action=ignore}.
+   *
+   * @return whether to relay the original request.
+   */
   @Override
   public boolean inspectRelayedHttpRequest(RelayedHttpListenerRequest relayedHttpListenerRequest) {
+    if (isActionIgnore(relayedHttpListenerRequest)) {
+      logger.info("SetDateAccessedInspector will ignore this request.");
+      return true;
+    } else {
+      return checkLastAccessDateAndCallServiceIfExpired(relayedHttpListenerRequest);
+    }
+  }
 
-    return checkLastAccessDateAndCallServiceIfExpired(relayedHttpListenerRequest);
+  private boolean isActionIgnore(RelayedHttpListenerRequest relayedHttpListenerRequest) {
+    Map<String, String> headers = relayedHttpListenerRequest.getHeaders();
+    if (headers == null) {
+      logger.error("No request headers found");
+      return false;
+    }
+
+    String actionValue = headers.getOrDefault(ACTION_HEADER_KEY, null);
+
+    return ACTION_HEADER_VALUE_IGNORE.equals(actionValue);
   }
 
   private boolean checkLastAccessDateAndCallServiceIfExpired(
@@ -131,7 +156,7 @@ public class SetDateAccessedInspector implements RequestInspector {
     }
 
     logger.debug("Making a call to the last accessed date API at this URL: {}", serviceUrl);
-    
+
     HttpResponse<String> response;
     try {
       response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());

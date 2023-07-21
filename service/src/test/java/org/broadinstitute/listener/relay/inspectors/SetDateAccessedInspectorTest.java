@@ -34,27 +34,26 @@ class SetDateAccessedInspectorTest {
   public static final String AUTH_TOKEN = "Bearer AUTH_TOKEN";
   public static final String AUTHORIZATION_HEADER = "Authorization";
   public static final String RUNTIME_NAME = "RUNTIME_NAME";
+
+  public static final String X_ACTION_HEADER = "X-SetDateAccessedInspector-Action";
+  public static final String X_ACTION_HEADER_VALUE_IGNORE = "ignore";
+
   @Mock private HttpClient httpClient;
   @Mock private RelayedHttpListenerRequest listenerRequest;
   @Mock private HttpResponse httpResponse;
+  @Mock private TokenChecker tokenChecker;
 
   @Captor private ArgumentCaptor<HttpRequest> httpRequestArgumentCaptor;
 
   private SetDateAccessedInspectorOptions options;
   private SetDateAccessedInspector inspector;
   private UUID workspaceId;
-
   private Map<String, String> headers;
 
   @BeforeEach
   void setUp() throws IOException, URISyntaxException, InterruptedException {
     headers = new HashMap<>();
     headers.put(AUTHORIZATION_HEADER, AUTH_TOKEN);
-
-    when(listenerRequest.getHeaders()).thenReturn(headers);
-
-    when(httpClient.send(any(), any())).thenReturn(httpResponse);
-
     workspaceId = UUID.randomUUID();
     options =
         new SetDateAccessedInspectorOptions(
@@ -65,6 +64,9 @@ class SetDateAccessedInspectorTest {
   @Test
   void inspectWebSocketUpgradeRequest_calledTwice_onlyOneCallToHttpClient()
       throws IOException, InterruptedException {
+    when(listenerRequest.getHeaders()).thenReturn(headers);
+    when(httpClient.send(any(), any())).thenReturn(httpResponse);
+
     inspector.inspectWebSocketUpgradeRequest(listenerRequest);
     inspector.inspectWebSocketUpgradeRequest(listenerRequest);
 
@@ -74,6 +76,9 @@ class SetDateAccessedInspectorTest {
   @Test
   void inspectRelayedHttpRequest_calledTwice_onlyOneCallToHttpClient()
       throws IOException, InterruptedException {
+    when(listenerRequest.getHeaders()).thenReturn(headers);
+    when(httpClient.send(any(), any())).thenReturn(httpResponse);
+
     inspector.inspectRelayedHttpRequest(listenerRequest);
     inspector.inspectRelayedHttpRequest(listenerRequest);
 
@@ -83,6 +88,9 @@ class SetDateAccessedInspectorTest {
   @Test
   void inspectRelayedHttpRequest_multipleCallsOverTwoWindows_twiceCallToHttpClient()
       throws IOException, InterruptedException {
+    when(listenerRequest.getHeaders()).thenReturn(headers);
+    when(httpClient.send(any(), any())).thenReturn(httpResponse);
+
     inspector.inspectRelayedHttpRequest(listenerRequest);
     inspector.inspectRelayedHttpRequest(listenerRequest);
     inspector.inspectRelayedHttpRequest(listenerRequest);
@@ -97,6 +105,9 @@ class SetDateAccessedInspectorTest {
   @Test
   void inspectRelayedHttpRequest_callOnce_callToLeoHasAuthHeader()
       throws IOException, InterruptedException {
+    when(listenerRequest.getHeaders()).thenReturn(headers);
+    when(httpClient.send(any(), any())).thenReturn(httpResponse);
+
     inspector.inspectRelayedHttpRequest(listenerRequest);
 
     verify(httpClient, times(1)).send(httpRequestArgumentCaptor.capture(), any());
@@ -107,8 +118,22 @@ class SetDateAccessedInspectorTest {
   }
 
   @Test
+  void inspectRelayedHttpRequest_callOnce_ignored() throws IOException, InterruptedException {
+    Map<String, String> customHeaders = new HashMap<>();
+    customHeaders.putAll(headers);
+    customHeaders.put(X_ACTION_HEADER, X_ACTION_HEADER_VALUE_IGNORE);
+
+    when(listenerRequest.getHeaders()).thenReturn(customHeaders);
+
+    inspector.inspectRelayedHttpRequest(listenerRequest);
+
+    verify(httpClient, times(0)).send(httpRequestArgumentCaptor.capture(), any());
+  }
+
+  @Test
   void inspectRelayedHttpRequest_sendOperationThrows_returnTrue()
       throws IOException, InterruptedException {
+    when(listenerRequest.getHeaders()).thenReturn(headers);
     when(httpClient.send(any(), any())).thenThrow(RuntimeException.class);
 
     assertThat(inspector.inspectRelayedHttpRequest(listenerRequest), is(true));

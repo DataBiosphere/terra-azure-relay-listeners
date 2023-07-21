@@ -3,6 +3,7 @@ package org.broadinstitute.listener.relay.http;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.Mockito.when;
 
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
@@ -91,7 +92,8 @@ class TargetHttpResponseTest {
       targetHttpResponse =
           targetHttpResponse.createTargetHttpResponse(
               httpResponse, context, new CorsSupportProperties("", "", " ", "", validHosts));
-    } catch (Throwable ex) {}
+    } catch (Throwable ex) {
+    }
 
     assertThat(targetHttpResponse.getStatusCode(), equalTo(200));
     assertThat(targetHttpResponse.getBody().get(), equalTo(body));
@@ -110,28 +112,56 @@ class TargetHttpResponseTest {
 
   @Test
   void createLocalHttpResponse_invalidOrigin() {
+    when(httpHeaders.map()).thenReturn(headers);
+    when(httpResponse.headers()).thenReturn(httpHeaders);
+    when(httpResponse.statusCode()).thenReturn(200);
+    when(context.getRequest()).thenReturn(relayedHttpListenerRequest);
+    String requestOrigin = "http://malicious.site.com";
+    Map<String, String> requestHeaders = Map.of("Origin", requestOrigin);
+    when(context.getRequest().getHeaders()).thenReturn(requestHeaders);
+    List<String> validHosts = new ArrayList<String>(List.of("app.terra.bio"));
+
+    Throwable thrown = null;
+    try {
+      targetHttpResponse =
+          TargetHttpResponse.createTargetHttpResponse(
+              httpResponse, context, new CorsSupportProperties("", "", " ", "", validHosts));
+    } catch (Throwable ex) {
+      thrown = ex;
+      assertThat(
+          "Origin exception thrown",
+          ex.getMessage().contains(String.format("Origin %s not allowed.", requestOrigin)));
+    }
+    assertThat(thrown, notNullValue());
+  }
+
+  @Test
+  void createLocalHttpResponse_validOrigin() {
     when(httpResponse.body()).thenReturn(body);
     when(httpHeaders.map()).thenReturn(headers);
     when(httpResponse.headers()).thenReturn(httpHeaders);
     when(httpResponse.statusCode()).thenReturn(200);
     when(context.getRequest()).thenReturn(relayedHttpListenerRequest);
-    String requestOrigin = "malicious.site.com";
+    String requestOrigin = "http://app.terra.bio";
     Map<String, String> requestHeaders = Map.of("Origin", requestOrigin);
     when(context.getRequest().getHeaders()).thenReturn(requestHeaders);
 
+    List<String> validHosts =
+        new ArrayList<>() {
+          {
+            add("app.terra.bio");
+          }
+        };
+
+    boolean threw = false;
     try {
-      List<String> validHosts =
-          new ArrayList<>() {
-            {
-              add("app.terra.bio");
-            }
-          };
       targetHttpResponse =
-          targetHttpResponse.createTargetHttpResponse(
+          TargetHttpResponse.createTargetHttpResponse(
               httpResponse, context, new CorsSupportProperties("", "", " ", "", validHosts));
-    } catch (Throwable ex) {
-      assertThat("Origin exception thrown", ex.getMessage().equals(String.format("Origin %s not allowed.", requestOrigin)));
+    } catch (Exception ex) {
+      threw = true;
     }
+    assertThat(threw, equalTo(false));
 
     assertThat(targetHttpResponse.getStatusCode(), equalTo(200));
     assertThat(targetHttpResponse.getBody().get(), equalTo(body));

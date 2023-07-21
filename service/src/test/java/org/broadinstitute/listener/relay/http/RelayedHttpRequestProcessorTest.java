@@ -83,10 +83,10 @@ class RelayedHttpRequestProcessorTest {
     targetResponseHeaders.put("RES_HEADER", List.of("RES_VALUE"));
     requestHeaders = new HashMap<>();
     requestHeaders.put("REQ_HEADER", "REQ_VALUE");
-    requestHeaders.put("Origin", "app.terra.bio");
+    requestHeaders.put("Origin", "http://app.terra.bio");
 
     requestHeaders_invalidOrigin = new HashMap<>();
-    requestHeaders_invalidOrigin.put("Origin", "malicious.website.com");
+    requestHeaders_invalidOrigin.put("Origin", "http://malicious.website.com");
 
     List<String> validHosts =
         new ArrayList<>() {

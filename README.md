@@ -82,6 +82,12 @@ Leo uses this call to determine if the runtime instance has been accessed recent
 `listener.setDateAccessedInspectorProperties.callWindowInSeconds`: The time window in seconds in which, at the most, one call is made to the endpoint regardless of the number of requests made during that period.
 `listener.setDateAccessedInspectorProperties.runtimeName` : Runtime name of the instance associated with the listener this value is part of the request to Leo.
 
+##### Usage
+By default, any request successfully relayed by this listener (a maximum of once per `callWindowInSeconds`) will trigger a request to PATCH `${serviceHost}/api/v2/runtimes/${workspaceId}/${runtimeName}/updateDateAccessed`. To tell the listener to pass a request without sending this PATCH, include the *custom HTTP header* `X-SetDateAccessedInspector-Action=ignore` in the request headers. For example, from a Scala service using Http4s, you could add the following to your `Headers()` object:
+
+```
+Header.Raw(CIString("X-SetDateAccessedInspector-Action"), "ignore")
+```
 
 ## Running Jupyter Notebooks
 

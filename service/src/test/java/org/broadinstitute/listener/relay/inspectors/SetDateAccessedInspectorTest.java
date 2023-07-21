@@ -10,7 +10,6 @@ import static org.mockito.Mockito.when;
 
 import com.microsoft.azure.relay.RelayedHttpListenerRequest;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -34,9 +33,11 @@ class SetDateAccessedInspectorTest {
   private static final String SERVICE_HOST = "http://foo.bar";
   public static final String AUTH_TOKEN = "Bearer AUTH_TOKEN";
   public static final String AUTHORIZATION_HEADER = "Authorization";
-  public static final String HOST_HEADER = "Host";
   public static final String RUNTIME_NAME = "RUNTIME_NAME";
-  public static final String SA_EMAIL = "SA@EMAIL";
+
+  public static final String X_ACTION_HEADER = "X-SetDateAccessedInspector-Action";
+  public static final String X_ACTION_HEADER_VALUE_IGNORE = "ignore";
+
   @Mock private HttpClient httpClient;
   @Mock private RelayedHttpListenerRequest listenerRequest;
   @Mock private HttpResponse httpResponse;
@@ -49,30 +50,14 @@ class SetDateAccessedInspectorTest {
   private UUID workspaceId;
   private Map<String, String> headers;
 
-  private String getServiceHost() {
-    try {
-      return new URI(SERVICE_HOST).getHost();
-    } catch (URISyntaxException e) {
-      System.out.println("Bad host");
-      return "";
-    }
-  }
-
   @BeforeEach
   void setUp() throws IOException, URISyntaxException, InterruptedException {
     headers = new HashMap<>();
     headers.put(AUTHORIZATION_HEADER, AUTH_TOKEN);
-    headers.put(HOST_HEADER, "valid.com");
     workspaceId = UUID.randomUUID();
     options =
         new SetDateAccessedInspectorOptions(
-            SERVICE_HOST,
-            workspaceId,
-            CALL_WINDOW_IN_SECONDS,
-            RUNTIME_NAME,
-            SA_EMAIL,
-            httpClient,
-            tokenChecker);
+            SERVICE_HOST, workspaceId, CALL_WINDOW_IN_SECONDS, RUNTIME_NAME, httpClient);
     inspector = new SetDateAccessedInspector(options);
   }
 
@@ -133,13 +118,12 @@ class SetDateAccessedInspectorTest {
   }
 
   @Test
-  void inspectRelayedHttpRequest_callOnce_serviceHostNoOp()
-      throws IOException, InterruptedException {
-    Map<String, String> serviceHostHeaders = new HashMap<>();
-    serviceHostHeaders.putAll(headers);
-    serviceHostHeaders.put(HOST_HEADER, getServiceHost());
+  void inspectRelayedHttpRequest_callOnce_ignored() throws IOException, InterruptedException {
+    Map<String, String> customHeaders = new HashMap<>();
+    customHeaders.putAll(headers);
+    customHeaders.put(X_ACTION_HEADER, X_ACTION_HEADER_VALUE_IGNORE);
 
-    when(listenerRequest.getHeaders()).thenReturn(serviceHostHeaders);
+    when(listenerRequest.getHeaders()).thenReturn(customHeaders);
 
     inspector.inspectRelayedHttpRequest(listenerRequest);
 

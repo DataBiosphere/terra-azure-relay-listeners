@@ -92,8 +92,9 @@ public class SetDateAccessedInspector implements RequestInspector {
   }
 
   /**
-   * Inspect the request. Call Leonardo to updateDateAccessed on our resource,
-   * unless the request headers include {@code X-SetDateAccessedInspector-Action=ignore}.
+   * Inspect the request. Call Leonardo to updateDateAccessed on our resource, unless the request
+   * headers include {@code X-SetDateAccessedInspector-Action=ignore}.
+   *
    * @return whether to relay the original request.
    */
   @Override

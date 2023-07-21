@@ -31,6 +31,8 @@ public class SetDateAccessedInspector implements RequestInspector {
   private final TokenChecker tokenChecker;
   private static final int MIN_CALL_WINDOW_IN_SECONDS = 1;
   private static final String API_ENDPOINT_PATTERN = "%s/api/v2/runtimes/%s/%s/updateDateAccessed";
+  private static final String ACTION_HEADER_KEY = "X-SetDateAccessedInspector-Action";
+  private static final String ACTION_HEADER_VALUE_IGNORE = "ignore";
 
   public SetDateAccessedInspector(SetDateAccessedInspectorOptions options)
       throws URISyntaxException, MalformedURLException {
@@ -98,62 +100,35 @@ public class SetDateAccessedInspector implements RequestInspector {
   }
 
   /**
-   * Inspect the request, calling Leonardo to updateDateAccessed on our resource if the request
-   * represents an action from a user other than the Leonardo service account.
+   * Inspect the request. Call Leonardo to updateDateAccessed on our resource,
+   * unless the request headers include {@code X-SetDateAccessedInspector-Action=ignore}.
+   * @return whether to relay the original request.
    */
   @Override
   public boolean inspectRelayedHttpRequest(RelayedHttpListenerRequest relayedHttpListenerRequest) {
     logger.warn("DATE ACCESSED LISTENER !!!");
     logger.warn(relayedHttpListenerRequest.getHeaders().toString());
-    if (isHostServiceUrl(relayedHttpListenerRequest)) {
+    if (isActionIgnore(relayedHttpListenerRequest)) {
       logger.info("Not setting date accessed for a request from service host");
-      return true;
     } else {
-      return checkLastAccessDateAndCallServiceIfExpired(relayedHttpListenerRequest);
+      checkLastAccessDateAndCallServiceIfExpired(relayedHttpListenerRequest);
     }
+    return true;
   }
 
-  private boolean isHostServiceUrl(RelayedHttpListenerRequest relayedHttpListenerRequest) {
+  private boolean isActionIgnore(RelayedHttpListenerRequest relayedHttpListenerRequest) {
     Map<String, String> headers = relayedHttpListenerRequest.getHeaders();
     if (headers == null) {
       logger.error("No request headers found");
       return false;
     }
 
-    String requestHost = Utils.getHost(headers).get();
-    String serviceHost = serviceUrl.getHost();
+    String actionValue = headers.getOrDefault(ACTION_HEADER_KEY, null);
 
-    return serviceHost.equals(requestHost);
+    return ACTION_HEADER_VALUE_IGNORE.equals(actionValue);
   }
 
-  private boolean isLeonardoServiceAccountUser(
-      RelayedHttpListenerRequest relayedHttpListenerRequest) {
-    Map<String, String> headers = relayedHttpListenerRequest.getHeaders();
-    if (headers == null) {
-      logger.error("No auth headers found");
-      return false;
-    }
-
-    var leoToken = Utils.getToken(headers);
-
-    if (leoToken.isEmpty()) {
-      logger.error("No valid token found");
-      return false;
-    } else {
-      try {
-        var token = leoToken.get();
-        return tokenChecker.isTokenForUser(token, leonardoServiceAccountEmail);
-      } catch (IOException | InterruptedException e) {
-        logger.error("Failed to check token info", e);
-        return false;
-      } catch (Exception e) {
-        logger.error("Failed for unknown reasons", e);
-        return false;
-      }
-    }
-  }
-
-  private boolean checkLastAccessDateAndCallServiceIfExpired(
+  private void checkLastAccessDateAndCallServiceIfExpired(
       RelayedHttpListenerRequest relayedHttpListenerRequest) {
     try {
       if (hasLastAccessDateExpired()) {
@@ -165,7 +140,7 @@ public class SetDateAccessedInspector implements RequestInspector {
           "Failed to set the last accessed date. The request still will get processed", ex);
     }
 
-    return true;
+    return;
   }
 
   public void setLastAccessedDateOnService(RelayedHttpListenerRequest relayedHttpListenerRequest) {

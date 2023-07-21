@@ -113,9 +113,7 @@ public class RelayedHttpRequestProcessor {
   public Result writePreflightResponse(RelayedHttpListenerContext context) {
     Map<String, String> requestHeaders = context.getRequest().getHeaders();
     if (!Utils.isValidOrigin(requestHeaders.getOrDefault("Origin", ""), corsSupportProperties)) {
-      logger.error(
-          String.format(
-              "Origin %s not allowed. Error Code: RHRP-001", requestHeaders.get("Origin")));
+      logger.error(String.format("Origin %s not allowed. Error Code: RHRP-001", requestHeaders.get("Origin")));
       return Result.FAILURE;
     }
 
@@ -153,9 +151,7 @@ public class RelayedHttpRequestProcessor {
         if (!Utils.isValidOrigin(
             requestHeaders.getOrDefault("Origin", ""), corsSupportProperties)) {
           logger.error(
-              String.format(
-                  "Origin %s not allowed. Error Code: RHRP-002",
-                  requestHeaders.getOrDefault("Origin", "")));
+              String.format("Origin %s not allowed. Error Code: RHRP-002", requestHeaders.getOrDefault("Origin", "")));
           return Result.FAILURE;
         }
 

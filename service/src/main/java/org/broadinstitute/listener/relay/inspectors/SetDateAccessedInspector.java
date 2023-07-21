@@ -27,8 +27,6 @@ public class SetDateAccessedInspector implements RequestInspector {
 
   private final int callWindowInSeconds;
   private final HttpClient httpClient;
-  private final String leonardoServiceAccountEmail;
-  private final TokenChecker tokenChecker;
   private static final int MIN_CALL_WINDOW_IN_SECONDS = 1;
   private static final String API_ENDPOINT_PATTERN = "%s/api/v2/runtimes/%s/%s/updateDateAccessed";
   private static final String ACTION_HEADER_KEY = "X-SetDateAccessedInspector-Action";
@@ -41,8 +39,6 @@ public class SetDateAccessedInspector implements RequestInspector {
 
     this.httpClient = options.httpClient();
     this.callWindowInSeconds = options.callWindowInSeconds();
-    this.leonardoServiceAccountEmail = options.leonardoServiceAccountEmail();
-    this.tokenChecker = options.tokenChecker();
 
     lastAccessedDate = Instant.now();
     URIBuilder builder =
@@ -86,10 +82,6 @@ public class SetDateAccessedInspector implements RequestInspector {
     if (options.httpClient() == null) {
       throw new IllegalArgumentException("The http client can't be null");
     }
-
-    if (options.tokenChecker() == null) {
-      throw new IllegalArgumentException("The token checker can't be null");
-    }
   }
 
   @Override
@@ -106,14 +98,12 @@ public class SetDateAccessedInspector implements RequestInspector {
    */
   @Override
   public boolean inspectRelayedHttpRequest(RelayedHttpListenerRequest relayedHttpListenerRequest) {
-    logger.warn("DATE ACCESSED LISTENER !!!");
-    logger.warn(relayedHttpListenerRequest.getHeaders().toString());
     if (isActionIgnore(relayedHttpListenerRequest)) {
-      logger.info("Not setting date accessed for a request from service host");
+      logger.info("SetDateAccessedInspector will ignore this request.");
+      return true;
     } else {
-      checkLastAccessDateAndCallServiceIfExpired(relayedHttpListenerRequest);
+      return checkLastAccessDateAndCallServiceIfExpired(relayedHttpListenerRequest);
     }
-    return true;
   }
 
   private boolean isActionIgnore(RelayedHttpListenerRequest relayedHttpListenerRequest) {
@@ -128,7 +118,7 @@ public class SetDateAccessedInspector implements RequestInspector {
     return ACTION_HEADER_VALUE_IGNORE.equals(actionValue);
   }
 
-  private void checkLastAccessDateAndCallServiceIfExpired(
+  private boolean checkLastAccessDateAndCallServiceIfExpired(
       RelayedHttpListenerRequest relayedHttpListenerRequest) {
     try {
       if (hasLastAccessDateExpired()) {
@@ -140,7 +130,7 @@ public class SetDateAccessedInspector implements RequestInspector {
           "Failed to set the last accessed date. The request still will get processed", ex);
     }
 
-    return;
+    return true;
   }
 
   public void setLastAccessedDateOnService(RelayedHttpListenerRequest relayedHttpListenerRequest) {

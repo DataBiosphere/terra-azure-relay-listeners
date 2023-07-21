@@ -81,7 +81,6 @@ Leo uses this call to determine if the runtime instance has been accessed recent
 `listener.setDateAccessedInspectorProperties.workspaceId`: ID of the workspace containing the runtime instance.
 `listener.setDateAccessedInspectorProperties.callWindowInSeconds`: The time window in seconds in which, at the most, one call is made to the endpoint regardless of the number of requests made during that period.
 `listener.setDateAccessedInspectorProperties.runtimeName` : Runtime name of the instance associated with the listener this value is part of the request to Leo.
-`listener.setDateAccessedInspectorProperties.leonardoServiceAccountEmail`: The email address used by the Leonardo service account, to be ignored by the dateAccessed setter.
 
 
 ## Running Jupyter Notebooks

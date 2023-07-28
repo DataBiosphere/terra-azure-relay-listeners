@@ -46,10 +46,7 @@ jobs:
           cache: 'gradle'
 
       - name: Test with coverage
-        run: ./gradlew --build-cache --scan test
-
-      - name: Perform sonar sast
-        run: ./gradlew --build-cache sonar --info
+        run: ./gradlew --build-cache --scan test jacocoTestReport sonar --info
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

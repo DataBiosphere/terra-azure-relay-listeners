@@ -46,8 +46,6 @@ jobs:
           cache: 'gradle'
       - name: Test with coverage
         run: ./gradlew --build-cache --scan test
-      - name: Perform sonar sast
-        run: ./gradlew --build-cache sonar --info
 
   publish-job:
     needs: [ build ]

@@ -1,4 +1,7 @@
 # Terra Azure Relay Listener
+
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=DataBiosphere_terra-azure-relay-listeners&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=DataBiosphere_terra-azure-relay-listeners)
+
 The Terra Azure Relay Listener enables secure communications with private resources deployed in a customer subscription using Azure Relay.
 
 The Terra Azure Relay Listener establishes a bi-directional channel with Azure Relay. Once the channel is established, the listener forwards HTTP requests to a private endpoint and returns the responses to the caller. The listener also supports WebSockets. The listener establishes a persistent WebSocket connection with the private resource and forwards data bidirectionally to and from the caller and private endpoint.

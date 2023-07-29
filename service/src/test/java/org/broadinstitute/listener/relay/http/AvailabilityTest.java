@@ -16,6 +16,7 @@ import org.springframework.boot.availability.ReadinessState;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -23,6 +24,7 @@ import org.springframework.test.web.servlet.ResultActions;
 @ExtendWith(SpringExtension.class)
 @AutoConfigureMockMvc
 @SpringBootTest({"spring.main.allow-bean-definition-overriding=true"})
+@ActiveProfiles("test")
 public class AvailabilityTest {
 
   @Autowired private MockMvc mvc;

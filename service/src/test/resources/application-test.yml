@@ -1,0 +1,11 @@
+listener:
+  relayConnectionString: Endpoint=sb://fake-namespace.servicebus.windows.net/;SharedAccessKeyName=listener;SharedAccessKey=fake-key;EntityPath=fake-connection
+  relayConnectionName: fake-connection
+  targetProperties:
+    targetHost: http://fake-service:8000/
+
+  setDateAccessedInspectorProperties:
+    serviceHost: https://leonardo.dsde-dev.broadinstitute.org
+    workspaceId: 5b8fa9c9-94f5-4a43-82f8-785524bd407e # fake
+    callWindowInSeconds: 60
+    runtimeName: fake-runtime

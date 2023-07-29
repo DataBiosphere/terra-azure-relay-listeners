@@ -32,7 +32,7 @@ class ExpiresAtCacheTest {
   @Autowired private CacheManager cacheManager;
 
   private SamResourceClient mock;
-  ;
+
   @Autowired private SamResourceClient samResourceClient;
 
   @Configuration
@@ -62,7 +62,7 @@ class ExpiresAtCacheTest {
   }
 
   @Test
-  void checkWritePermission_sucess() {
+  void checkWritePermission_success() {
     samResourceClient.checkPermission("accessToken");
     assertThat(getCachedExpiresAt("accessToken").get(), equalTo(Instant.ofEpochSecond(100)));
     assertEquals(getCachedExpiresAt("accessToken-non-existent"), Optional.empty());

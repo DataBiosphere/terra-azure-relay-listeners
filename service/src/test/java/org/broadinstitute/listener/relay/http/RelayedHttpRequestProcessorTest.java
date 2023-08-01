@@ -243,7 +243,7 @@ class RelayedHttpRequestProcessorTest {
     when(context.getRequest()).thenReturn(listenerRequest);
     when(listenerRequest.getHeaders()).thenReturn(requestHeaders);
     when(healthComponent.getStatus()).thenReturn(Status.UP);
-    when(healthEndpoint.healthForPath("liveness")).thenReturn(healthComponent);
+    when(healthEndpoint.health()).thenReturn(healthComponent);
     try (MockedStatic<RelayedHttpRequestProcessor> mock =
         mockStatic(RelayedHttpRequestProcessor.class)) {
       mock.when(() -> RelayedHttpRequestProcessor.getOutputStreamFromContext(any()))

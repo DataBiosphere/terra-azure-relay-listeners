@@ -44,5 +44,8 @@ management:
     enabled-by-default: false
     web.exposure.include: health
   endpoint:
-    health.enabled: true
-    health.probes.enabled: true
+    health:
+      enabled: true
+      probes.enabled: true
+  health:
+    defaults.enabled: false

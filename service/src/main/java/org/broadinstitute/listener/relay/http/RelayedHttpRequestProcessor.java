@@ -230,8 +230,8 @@ public class RelayedHttpRequestProcessor {
         listenerResponse.getHeaders(), context.getRequest().getHeaders(), corsSupportProperties);
     listenerResponse.getHeaders().put("Content-Type", "application/json");
 
-    // Use spring actuator "liveness" check to drive status endpoint
-    HealthComponent health = healthEndpoint.healthForPath("liveness");
+    // Use spring actuator health check to drive status endpoint
+    HealthComponent health = healthEndpoint.health();
 
     // Write status
     final int statusCode = health.getStatus() == Status.UP ? 200 : 500;

@@ -20,6 +20,7 @@ import org.broadinstitute.listener.relay.inspectors.TokenChecker;
 import org.broadinstitute.listener.relay.transport.DefaultTargetResolver;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.availability.ApplicationAvailability;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -62,9 +63,14 @@ public class AppConfiguration {
 
   @Bean
   public RelayedHttpRequestProcessor relayedHttpRequestProcessor(
-      TargetResolver targetResolver, TokenChecker tokenChecker) {
+      TargetResolver targetResolver,
+      TokenChecker tokenChecker,
+      ApplicationAvailability applicationAvailability) {
     return new RelayedHttpRequestProcessor(
-        targetResolver, properties.getCorsSupportProperties(), tokenChecker);
+        targetResolver,
+        properties.getCorsSupportProperties(),
+        tokenChecker,
+        applicationAvailability);
   }
 
   @Bean

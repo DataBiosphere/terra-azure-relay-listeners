@@ -13,6 +13,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Locale;
@@ -26,6 +27,8 @@ import org.broadinstitute.listener.relay.inspectors.TokenChecker;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.availability.ApplicationAvailability;
+import org.springframework.boot.availability.LivenessState;
 import org.springframework.lang.NonNull;
 
 public class RelayedHttpRequestProcessor {
@@ -33,30 +36,34 @@ public class RelayedHttpRequestProcessor {
   private final HttpClient httpClient;
   private final TargetResolver targetHostResolver;
   private final CorsSupportProperties corsSupportProperties;
-
   private final TokenChecker tokenChecker;
+  private final ApplicationAvailability applicationAvailability;
 
   protected final Logger logger = LoggerFactory.getLogger(RelayedHttpRequestProcessor.class);
 
   public RelayedHttpRequestProcessor(
       @NonNull TargetResolver targetHostResolver,
       CorsSupportProperties corsSupportProperties,
-      TokenChecker tokenChecker) {
+      TokenChecker tokenChecker,
+      ApplicationAvailability applicationAvailability) {
     this.httpClient = HttpClient.newBuilder().version(Version.HTTP_1_1).build();
     this.targetHostResolver = targetHostResolver;
     this.corsSupportProperties = corsSupportProperties;
     this.tokenChecker = tokenChecker;
+    this.applicationAvailability = applicationAvailability;
   }
 
   public RelayedHttpRequestProcessor(
       HttpClient httpClient,
       @NonNull TargetResolver targetHostResolver,
       CorsSupportProperties corsSupportProperties,
-      TokenChecker tokenChecker) {
+      TokenChecker tokenChecker,
+      ApplicationAvailability applicationAvailability) {
     this.httpClient = httpClient;
     this.targetHostResolver = targetHostResolver;
     this.corsSupportProperties = corsSupportProperties;
     this.tokenChecker = tokenChecker;
+    this.applicationAvailability = applicationAvailability;
   }
 
   public TargetHttpResponse executeRequestOnTarget(RelayedHttpListenerContext requestContext) {
@@ -194,6 +201,45 @@ public class RelayedHttpRequestProcessor {
     return Result.SUCCESS;
   }
 
+  public Result writeStatusResponse(RelayedHttpListenerContext context) {
+    if (context.getResponse() == null) {
+      logger.error("The context did not have a valid response");
+      return Result.FAILURE;
+    }
+
+    // Check for valid origin
+    Map<String, String> requestHeaders = context.getRequest().getHeaders();
+    if (!Utils.isValidOrigin(requestHeaders.getOrDefault("Origin", ""), corsSupportProperties)) {
+      logger.error(
+          String.format(
+              "Origin %s not allowed. Error Code: RHRP-002",
+              requestHeaders.getOrDefault("Origin", "")));
+      return Result.FAILURE;
+    }
+
+    RelayedHttpListenerResponse listenerResponse = context.getResponse();
+
+    // Write headers
+    Utils.writeCORSHeaders(
+        listenerResponse.getHeaders(), context.getRequest().getHeaders(), corsSupportProperties);
+    listenerResponse.getHeaders().put("Content-Type", "application/json");
+
+    final boolean isOk = applicationAvailability.getLivenessState() == LivenessState.CORRECT;
+
+    // Write status
+    listenerResponse.setStatusCode(Utils.statusCode(isOk));
+
+    // Write body
+    try (final OutputStream outputStream = getOutputStreamFromContext(context)) {
+      outputStream.write(Utils.statusResponse(isOk).getBytes(StandardCharsets.UTF_8));
+    } catch (IOException e) {
+      logger.error("Failed to write response body to the remote client.", e);
+      return Result.FAILURE;
+    }
+
+    return Result.SUCCESS;
+  }
+
   public Result writeTargetResponseOnCaller(@NonNull TargetHttpResponse targetResponse) {
 
     if (targetResponse.getContext().getResponse() == null) {
@@ -303,6 +349,10 @@ public class RelayedHttpRequestProcessor {
     }
 
     return requestBuilder.build();
+  }
+
+  public static OutputStream getOutputStreamFromContext(RelayedHttpListenerContext context) {
+    return (OutputStream) context.getResponse().getOutputStream();
   }
 
   public enum Result {

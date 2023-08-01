@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -43,7 +44,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.availability.ApplicationAvailability;
+import org.springframework.boot.availability.LivenessState;
 
 @ExtendWith(MockitoExtension.class)
 class RelayedHttpRequestProcessorTest {
@@ -69,6 +73,7 @@ class RelayedHttpRequestProcessorTest {
   @Mock private TargetHttpResponse targetHttpResponse;
   @Mock private TargetResolver targetHostResolver;
   @Mock private TrackingContext trackingContext;
+  @Mock private ApplicationAvailability applicationAvailability;
   @Captor private ArgumentCaptor<byte[]> responseData;
 
   private Map<String, List<String>> targetResponseHeaders;
@@ -99,7 +104,8 @@ class RelayedHttpRequestProcessorTest {
             httpClient,
             targetHostResolver,
             new CorsSupportProperties("dummy", "dummy", "dummy", "dummy", validHosts),
-            new TokenChecker(new GoogleTokenInfoClient()));
+            new TokenChecker(new GoogleTokenInfoClient()),
+            applicationAvailability);
   }
 
   @Test
@@ -223,6 +229,46 @@ class RelayedHttpRequestProcessorTest {
     Result result = processor.writePreflightResponse(context);
 
     assertThat("Result is Failure", result.equals(Result.FAILURE));
+  }
+
+  @Test
+  void writeStatusResponse_ok() throws IOException {
+    when(context.getResponse()).thenReturn(listenerResponse);
+    when(context.getRequest()).thenReturn(listenerRequest);
+    when(listenerRequest.getHeaders()).thenReturn(requestHeaders);
+    when(applicationAvailability.getLivenessState()).thenReturn(LivenessState.CORRECT);
+    try (MockedStatic<RelayedHttpRequestProcessor> mock =
+        mockStatic(RelayedHttpRequestProcessor.class)) {
+      mock.when(() -> RelayedHttpRequestProcessor.getOutputStreamFromContext(any()))
+          .thenReturn(responseStream);
+
+      Result result = processor.writeStatusResponse(context);
+
+      assertThat("Result is Success", result.equals(Result.SUCCESS));
+      verify(responseStream).write(responseData.capture());
+      assertThat(new String(responseData.getValue()), equalTo("{ \"ok:\": \"true\" }"));
+      verify(responseStream).close();
+    }
+  }
+
+  @Test
+  void writeStatusReponse_notOk() throws IOException {
+    when(context.getResponse()).thenReturn(listenerResponse);
+    when(context.getRequest()).thenReturn(listenerRequest);
+    when(listenerRequest.getHeaders()).thenReturn(requestHeaders);
+    when(applicationAvailability.getLivenessState()).thenReturn(LivenessState.BROKEN);
+    try (MockedStatic<RelayedHttpRequestProcessor> mock =
+        mockStatic(RelayedHttpRequestProcessor.class)) {
+      mock.when(() -> RelayedHttpRequestProcessor.getOutputStreamFromContext(any()))
+          .thenReturn(responseStream);
+
+      Result result = processor.writeStatusResponse(context);
+
+      assertThat("Result is Success", result.equals(Result.SUCCESS));
+      verify(responseStream).write(responseData.capture());
+      assertThat(new String(responseData.getValue()), equalTo("{ \"ok:\": \"false\" }"));
+      verify(responseStream).close();
+    }
   }
 
   private void setUpRelayedHttpRequestMock()

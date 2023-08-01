@@ -6,9 +6,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.health.HealthEndpoint;
 import org.springframework.boot.availability.ApplicationAvailability;
 import org.springframework.boot.availability.AvailabilityChangeEvent;
 import org.springframework.boot.availability.LivenessState;
@@ -30,6 +32,8 @@ public class AvailabilityTest {
   @Autowired private MockMvc mvc;
   @Autowired private ApplicationContext context;
   @Autowired private ApplicationAvailability applicationAvailability;
+  @Autowired private HealthEndpoint healthEndpoint;
+  @Autowired private ObjectMapper objectMapper;
 
   // Reference: https://www.baeldung.com/spring-liveness-readiness-probes
   @Test

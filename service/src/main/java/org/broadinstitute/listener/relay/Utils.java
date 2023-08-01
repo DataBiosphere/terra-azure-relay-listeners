@@ -90,17 +90,9 @@ public class Utils {
   public static boolean isStatusPath(URI uri) {
     var splitted = uri.getPath().split("/");
     if (splitted.length == 3) {
-      return splitted[2].toLowerCase().equals(STATUS_API_PATH);
+      return splitted[2].equalsIgnoreCase(STATUS_API_PATH);
     } else {
       return false;
     }
-  }
-
-  public static final String statusResponse(boolean ok) {
-    return "{ \"ok:\": \"" + (ok ? "true" : "false") + "\" }";
-  }
-
-  public static final int statusCode(boolean ok) {
-    return ok ? 200 : 500;
   }
 }

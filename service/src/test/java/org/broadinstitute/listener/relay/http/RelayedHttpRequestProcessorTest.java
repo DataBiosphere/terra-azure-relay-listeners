@@ -6,10 +6,12 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
 import com.microsoft.azure.relay.RelayedHttpListenerRequest;
 import com.microsoft.azure.relay.RelayedHttpListenerResponse;
@@ -46,8 +48,9 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.boot.availability.ApplicationAvailability;
-import org.springframework.boot.availability.LivenessState;
+import org.springframework.boot.actuate.health.HealthComponent;
+import org.springframework.boot.actuate.health.HealthEndpoint;
+import org.springframework.boot.actuate.health.Status;
 
 @ExtendWith(MockitoExtension.class)
 class RelayedHttpRequestProcessorTest {
@@ -73,7 +76,9 @@ class RelayedHttpRequestProcessorTest {
   @Mock private TargetHttpResponse targetHttpResponse;
   @Mock private TargetResolver targetHostResolver;
   @Mock private TrackingContext trackingContext;
-  @Mock private ApplicationAvailability applicationAvailability;
+  @Mock private HealthEndpoint healthEndpoint;
+  @Mock private ObjectMapper objectMapper;
+  @Mock private HealthComponent healthComponent;
   @Captor private ArgumentCaptor<byte[]> responseData;
 
   private Map<String, List<String>> targetResponseHeaders;
@@ -105,7 +110,8 @@ class RelayedHttpRequestProcessorTest {
             targetHostResolver,
             new CorsSupportProperties("dummy", "dummy", "dummy", "dummy", validHosts),
             new TokenChecker(new GoogleTokenInfoClient()),
-            applicationAvailability);
+            healthEndpoint,
+            objectMapper);
   }
 
   @Test
@@ -236,7 +242,8 @@ class RelayedHttpRequestProcessorTest {
     when(context.getResponse()).thenReturn(listenerResponse);
     when(context.getRequest()).thenReturn(listenerRequest);
     when(listenerRequest.getHeaders()).thenReturn(requestHeaders);
-    when(applicationAvailability.getLivenessState()).thenReturn(LivenessState.CORRECT);
+    when(healthComponent.getStatus()).thenReturn(Status.UP);
+    when(healthEndpoint.healthForPath("liveness")).thenReturn(healthComponent);
     try (MockedStatic<RelayedHttpRequestProcessor> mock =
         mockStatic(RelayedHttpRequestProcessor.class)) {
       mock.when(() -> RelayedHttpRequestProcessor.getOutputStreamFromContext(any()))
@@ -245,8 +252,7 @@ class RelayedHttpRequestProcessorTest {
       Result result = processor.writeStatusResponse(context);
 
       assertThat("Result is Success", result.equals(Result.SUCCESS));
-      verify(responseStream).write(responseData.capture());
-      assertThat(new String(responseData.getValue()), equalTo("{ \"ok:\": \"true\" }"));
+      verify(objectMapper).writeValue(eq(responseStream), eq(healthComponent));
       verify(responseStream).close();
     }
   }
@@ -256,7 +262,8 @@ class RelayedHttpRequestProcessorTest {
     when(context.getResponse()).thenReturn(listenerResponse);
     when(context.getRequest()).thenReturn(listenerRequest);
     when(listenerRequest.getHeaders()).thenReturn(requestHeaders);
-    when(applicationAvailability.getLivenessState()).thenReturn(LivenessState.BROKEN);
+    when(healthComponent.getStatus()).thenReturn(Status.DOWN);
+    when(healthEndpoint.healthForPath("liveness")).thenReturn(healthComponent);
     try (MockedStatic<RelayedHttpRequestProcessor> mock =
         mockStatic(RelayedHttpRequestProcessor.class)) {
       mock.when(() -> RelayedHttpRequestProcessor.getOutputStreamFromContext(any()))
@@ -265,8 +272,7 @@ class RelayedHttpRequestProcessorTest {
       Result result = processor.writeStatusResponse(context);
 
       assertThat("Result is Success", result.equals(Result.SUCCESS));
-      verify(responseStream).write(responseData.capture());
-      assertThat(new String(responseData.getValue()), equalTo("{ \"ok:\": \"false\" }"));
+      verify(objectMapper).writeValue(eq(responseStream), eq(healthComponent));
       verify(responseStream).close();
     }
   }

@@ -2,6 +2,7 @@ package org.broadinstitute.listener.relay.http;
 
 import static com.google.common.net.HttpHeaders.SET_COOKIE;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
 import com.microsoft.azure.relay.RelayedHttpListenerRequest;
 import com.microsoft.azure.relay.RelayedHttpListenerResponse;
@@ -13,7 +14,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Locale;
@@ -27,8 +27,9 @@ import org.broadinstitute.listener.relay.inspectors.TokenChecker;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.availability.ApplicationAvailability;
-import org.springframework.boot.availability.LivenessState;
+import org.springframework.boot.actuate.health.HealthComponent;
+import org.springframework.boot.actuate.health.HealthEndpoint;
+import org.springframework.boot.actuate.health.Status;
 import org.springframework.lang.NonNull;
 
 public class RelayedHttpRequestProcessor {
@@ -37,7 +38,8 @@ public class RelayedHttpRequestProcessor {
   private final TargetResolver targetHostResolver;
   private final CorsSupportProperties corsSupportProperties;
   private final TokenChecker tokenChecker;
-  private final ApplicationAvailability applicationAvailability;
+  private final HealthEndpoint healthEndpoint;
+  private final ObjectMapper objectMapper;
 
   protected final Logger logger = LoggerFactory.getLogger(RelayedHttpRequestProcessor.class);
 
@@ -45,12 +47,14 @@ public class RelayedHttpRequestProcessor {
       @NonNull TargetResolver targetHostResolver,
       CorsSupportProperties corsSupportProperties,
       TokenChecker tokenChecker,
-      ApplicationAvailability applicationAvailability) {
+      HealthEndpoint healthEndpoint,
+      ObjectMapper objectMapper) {
     this.httpClient = HttpClient.newBuilder().version(Version.HTTP_1_1).build();
     this.targetHostResolver = targetHostResolver;
     this.corsSupportProperties = corsSupportProperties;
     this.tokenChecker = tokenChecker;
-    this.applicationAvailability = applicationAvailability;
+    this.healthEndpoint = healthEndpoint;
+    this.objectMapper = objectMapper;
   }
 
   public RelayedHttpRequestProcessor(
@@ -58,12 +62,14 @@ public class RelayedHttpRequestProcessor {
       @NonNull TargetResolver targetHostResolver,
       CorsSupportProperties corsSupportProperties,
       TokenChecker tokenChecker,
-      ApplicationAvailability applicationAvailability) {
+      HealthEndpoint healthEndpoint,
+      ObjectMapper objectMapper) {
     this.httpClient = httpClient;
     this.targetHostResolver = targetHostResolver;
     this.corsSupportProperties = corsSupportProperties;
     this.tokenChecker = tokenChecker;
-    this.applicationAvailability = applicationAvailability;
+    this.healthEndpoint = healthEndpoint;
+    this.objectMapper = objectMapper;
   }
 
   public TargetHttpResponse executeRequestOnTarget(RelayedHttpListenerContext requestContext) {
@@ -224,14 +230,16 @@ public class RelayedHttpRequestProcessor {
         listenerResponse.getHeaders(), context.getRequest().getHeaders(), corsSupportProperties);
     listenerResponse.getHeaders().put("Content-Type", "application/json");
 
-    final boolean isOk = applicationAvailability.getLivenessState() == LivenessState.CORRECT;
+    // Use spring actuator "liveness" check to drive status endpoint
+    HealthComponent health = healthEndpoint.healthForPath("liveness");
 
     // Write status
-    listenerResponse.setStatusCode(Utils.statusCode(isOk));
+    final int statusCode = health.getStatus() == Status.UP ? 200 : 500;
+    listenerResponse.setStatusCode(statusCode);
 
     // Write body
     try (final OutputStream outputStream = getOutputStreamFromContext(context)) {
-      outputStream.write(Utils.statusResponse(isOk).getBytes(StandardCharsets.UTF_8));
+      objectMapper.writeValue(outputStream, health);
     } catch (IOException e) {
       logger.error("Failed to write response body to the remote client.", e);
       return Result.FAILURE;

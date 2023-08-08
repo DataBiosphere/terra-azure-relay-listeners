@@ -348,7 +348,7 @@ public class RelayedHttpRequestProcessor {
   }
 
   public static OutputStream getOutputStreamFromContext(RelayedHttpListenerContext context) {
-    return (OutputStream) context.getResponse().getOutputStream();
+    return context.getResponse().getOutputStream();
   }
 
   public enum Result {

@@ -25,7 +25,7 @@ import org.springframework.test.web.servlet.ResultActions;
 @AutoConfigureMockMvc
 @SpringBootTest({"spring.main.allow-bean-definition-overriding=true"})
 @ActiveProfiles("test")
-public class AvailabilityTest {
+class AvailabilityTest {
 
   @Autowired private MockMvc mvc;
   @Autowired private ApplicationContext context;
@@ -33,7 +33,7 @@ public class AvailabilityTest {
 
   // Reference: https://www.baeldung.com/spring-liveness-readiness-probes
   @Test
-  public void readinessState() throws Exception {
+  void readinessState() throws Exception {
     assertThat(
         "Readiness state should be ACCEPTING_TRAFFIC",
         applicationAvailability.getReadinessState(),
@@ -52,7 +52,7 @@ public class AvailabilityTest {
   }
 
   @Test
-  public void livenessState() throws Exception {
+  void livenessState() throws Exception {
     assertThat(
         "Liveness state should be CORRECT",
         applicationAvailability.getLivenessState(),

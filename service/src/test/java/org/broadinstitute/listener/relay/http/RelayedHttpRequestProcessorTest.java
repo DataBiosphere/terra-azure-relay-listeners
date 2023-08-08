@@ -6,7 +6,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -250,7 +249,7 @@ class RelayedHttpRequestProcessorTest {
       Result result = processor.writeStatusResponse(context);
 
       assertThat("Result is Success", result.equals(Result.SUCCESS));
-      verify(objectMapper).writeValue(eq(responseStream), eq(healthComponent));
+      verify(objectMapper).writeValue(responseStream, healthComponent);
       verify(responseStream).close();
     }
   }
@@ -268,7 +267,7 @@ class RelayedHttpRequestProcessorTest {
       Result result = processor.writeStatusResponse(context);
 
       assertThat("Result is Success", result.equals(Result.SUCCESS));
-      verify(objectMapper).writeValue(eq(responseStream), eq(healthComponent));
+      verify(objectMapper).writeValue(responseStream, healthComponent);
       verify(responseStream).close();
     }
   }

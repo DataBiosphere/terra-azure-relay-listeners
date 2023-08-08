@@ -8,6 +8,10 @@ import org.springframework.boot.availability.ReadinessState;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+/**
+ * Listens for availability change events from Spring Boot Actuator and writes log messages.
+ * See: https://www.baeldung.com/spring-boot-actuators
+ */
 @Component
 public class AvailabilityListener {
   private static final Logger logger = LoggerFactory.getLogger(AvailabilityListener.class);

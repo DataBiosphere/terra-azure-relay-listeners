@@ -213,21 +213,9 @@ public class RelayedHttpRequestProcessor {
       return Result.FAILURE;
     }
 
-    // Check for valid origin
-    Map<String, String> requestHeaders = context.getRequest().getHeaders();
-    if (!Utils.isValidOrigin(requestHeaders.getOrDefault("Origin", ""), corsSupportProperties)) {
-      logger.error(
-          String.format(
-              "Origin %s not allowed. Error Code: RHRP-002",
-              requestHeaders.getOrDefault("Origin", "")));
-      return Result.FAILURE;
-    }
-
     RelayedHttpListenerResponse listenerResponse = context.getResponse();
 
     // Write headers
-    Utils.writeCORSHeaders(
-        listenerResponse.getHeaders(), context.getRequest().getHeaders(), corsSupportProperties);
     listenerResponse.getHeaders().put("Content-Type", "application/json");
 
     // Use spring actuator health check to drive status endpoint

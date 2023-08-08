@@ -240,8 +240,6 @@ class RelayedHttpRequestProcessorTest {
   @Test
   void writeStatusResponse_ok() throws IOException {
     when(context.getResponse()).thenReturn(listenerResponse);
-    when(context.getRequest()).thenReturn(listenerRequest);
-    when(listenerRequest.getHeaders()).thenReturn(requestHeaders);
     when(healthComponent.getStatus()).thenReturn(Status.UP);
     when(healthEndpoint.health()).thenReturn(healthComponent);
     try (MockedStatic<RelayedHttpRequestProcessor> mock =
@@ -260,8 +258,6 @@ class RelayedHttpRequestProcessorTest {
   @Test
   void writeStatusReponse_notOk() throws IOException {
     when(context.getResponse()).thenReturn(listenerResponse);
-    when(context.getRequest()).thenReturn(listenerRequest);
-    when(listenerRequest.getHeaders()).thenReturn(requestHeaders);
     when(healthComponent.getStatus()).thenReturn(Status.DOWN);
     when(healthEndpoint.health()).thenReturn(healthComponent);
     try (MockedStatic<RelayedHttpRequestProcessor> mock =

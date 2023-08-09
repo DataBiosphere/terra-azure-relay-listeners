@@ -49,6 +49,13 @@ public class ListenerConnectionHandler {
     return !isSetCookieRequest;
   }
 
+  public boolean isNotStatus(RelayedHttpListenerRequest listenerRequest) {
+    var isStatusRequest =
+        listenerRequest.getHttpMethod().equals("GET")
+            && Utils.isStatusPath(listenerRequest.getUri());
+    return !isStatusRequest;
+  }
+
   public boolean isRelayedWebSocketUpgradeRequestAcceptedByInspectors(
       RelayedHttpListenerRequest listenerRequest) {
     return this.inspectorsProcessor.isRelayedWebSocketUpgradeRequestAccepted(listenerRequest);

@@ -2,6 +2,7 @@ package org.broadinstitute.listener.relay.http;
 
 import static com.google.common.net.HttpHeaders.SET_COOKIE;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
 import com.microsoft.azure.relay.RelayedHttpListenerRequest;
 import com.microsoft.azure.relay.RelayedHttpListenerResponse;
@@ -26,6 +27,9 @@ import org.broadinstitute.listener.relay.inspectors.TokenChecker;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.actuate.health.HealthComponent;
+import org.springframework.boot.actuate.health.HealthEndpoint;
+import org.springframework.boot.actuate.health.Status;
 import org.springframework.lang.NonNull;
 
 public class RelayedHttpRequestProcessor {
@@ -33,30 +37,39 @@ public class RelayedHttpRequestProcessor {
   private final HttpClient httpClient;
   private final TargetResolver targetHostResolver;
   private final CorsSupportProperties corsSupportProperties;
-
   private final TokenChecker tokenChecker;
+  private final HealthEndpoint healthEndpoint;
+  private final ObjectMapper objectMapper;
 
   protected final Logger logger = LoggerFactory.getLogger(RelayedHttpRequestProcessor.class);
 
   public RelayedHttpRequestProcessor(
       @NonNull TargetResolver targetHostResolver,
       CorsSupportProperties corsSupportProperties,
-      TokenChecker tokenChecker) {
+      TokenChecker tokenChecker,
+      HealthEndpoint healthEndpoint,
+      ObjectMapper objectMapper) {
     this.httpClient = HttpClient.newBuilder().version(Version.HTTP_1_1).build();
     this.targetHostResolver = targetHostResolver;
     this.corsSupportProperties = corsSupportProperties;
     this.tokenChecker = tokenChecker;
+    this.healthEndpoint = healthEndpoint;
+    this.objectMapper = objectMapper;
   }
 
   public RelayedHttpRequestProcessor(
       HttpClient httpClient,
       @NonNull TargetResolver targetHostResolver,
       CorsSupportProperties corsSupportProperties,
-      TokenChecker tokenChecker) {
+      TokenChecker tokenChecker,
+      HealthEndpoint healthEndpoint,
+      ObjectMapper objectMapper) {
     this.httpClient = httpClient;
     this.targetHostResolver = targetHostResolver;
     this.corsSupportProperties = corsSupportProperties;
     this.tokenChecker = tokenChecker;
+    this.healthEndpoint = healthEndpoint;
+    this.objectMapper = objectMapper;
   }
 
   public TargetHttpResponse executeRequestOnTarget(RelayedHttpListenerContext requestContext) {
@@ -194,6 +207,35 @@ public class RelayedHttpRequestProcessor {
     return Result.SUCCESS;
   }
 
+  public Result writeStatusResponse(RelayedHttpListenerContext context) {
+    if (context.getResponse() == null) {
+      logger.error("The context did not have a valid response");
+      return Result.FAILURE;
+    }
+
+    RelayedHttpListenerResponse listenerResponse = context.getResponse();
+
+    // Write headers
+    listenerResponse.getHeaders().put("Content-Type", "application/json");
+
+    // Use spring actuator health check to drive status endpoint
+    HealthComponent health = healthEndpoint.health();
+
+    // Write status
+    final int statusCode = health.getStatus() == Status.UP ? 200 : 500;
+    listenerResponse.setStatusCode(statusCode);
+
+    // Write body
+    try (final OutputStream outputStream = getOutputStreamFromContext(context)) {
+      objectMapper.writeValue(outputStream, health);
+    } catch (IOException e) {
+      logger.error("Failed to write response body to the remote client.", e);
+      return Result.FAILURE;
+    }
+
+    return Result.SUCCESS;
+  }
+
   public Result writeTargetResponseOnCaller(@NonNull TargetHttpResponse targetResponse) {
 
     if (targetResponse.getContext().getResponse() == null) {
@@ -303,6 +345,10 @@ public class RelayedHttpRequestProcessor {
     }
 
     return requestBuilder.build();
+  }
+
+  public static OutputStream getOutputStreamFromContext(RelayedHttpListenerContext context) {
+    return context.getResponse().getOutputStream();
   }
 
   public enum Result {

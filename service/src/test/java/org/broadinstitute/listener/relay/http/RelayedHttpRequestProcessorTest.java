@@ -6,9 +6,11 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.relay.RelayedHttpListenerContext;
 import com.microsoft.azure.relay.RelayedHttpListenerRequest;
 import com.microsoft.azure.relay.RelayedHttpListenerResponse;
@@ -43,7 +45,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.actuate.health.HealthComponent;
+import org.springframework.boot.actuate.health.HealthEndpoint;
+import org.springframework.boot.actuate.health.Status;
 
 @ExtendWith(MockitoExtension.class)
 class RelayedHttpRequestProcessorTest {
@@ -69,6 +75,9 @@ class RelayedHttpRequestProcessorTest {
   @Mock private TargetHttpResponse targetHttpResponse;
   @Mock private TargetResolver targetHostResolver;
   @Mock private TrackingContext trackingContext;
+  @Mock private HealthEndpoint healthEndpoint;
+  @Mock private ObjectMapper objectMapper;
+  @Mock private HealthComponent healthComponent;
   @Captor private ArgumentCaptor<byte[]> responseData;
 
   private Map<String, List<String>> targetResponseHeaders;
@@ -99,7 +108,9 @@ class RelayedHttpRequestProcessorTest {
             httpClient,
             targetHostResolver,
             new CorsSupportProperties("dummy", "dummy", "dummy", "dummy", validHosts),
-            new TokenChecker(new GoogleTokenInfoClient()));
+            new TokenChecker(new GoogleTokenInfoClient()),
+            healthEndpoint,
+            objectMapper);
   }
 
   @Test
@@ -223,6 +234,42 @@ class RelayedHttpRequestProcessorTest {
     Result result = processor.writePreflightResponse(context);
 
     assertThat("Result is Failure", result.equals(Result.FAILURE));
+  }
+
+  @Test
+  void writeStatusResponse_ok() throws IOException {
+    when(context.getResponse()).thenReturn(listenerResponse);
+    when(healthComponent.getStatus()).thenReturn(Status.UP);
+    when(healthEndpoint.health()).thenReturn(healthComponent);
+    try (MockedStatic<RelayedHttpRequestProcessor> mock =
+        mockStatic(RelayedHttpRequestProcessor.class)) {
+      mock.when(() -> RelayedHttpRequestProcessor.getOutputStreamFromContext(any()))
+          .thenReturn(responseStream);
+
+      Result result = processor.writeStatusResponse(context);
+
+      assertThat("Result is Success", result.equals(Result.SUCCESS));
+      verify(objectMapper).writeValue(responseStream, healthComponent);
+      verify(responseStream).close();
+    }
+  }
+
+  @Test
+  void writeStatusReponse_notOk() throws IOException {
+    when(context.getResponse()).thenReturn(listenerResponse);
+    when(healthComponent.getStatus()).thenReturn(Status.DOWN);
+    when(healthEndpoint.health()).thenReturn(healthComponent);
+    try (MockedStatic<RelayedHttpRequestProcessor> mock =
+        mockStatic(RelayedHttpRequestProcessor.class)) {
+      mock.when(() -> RelayedHttpRequestProcessor.getOutputStreamFromContext(any()))
+          .thenReturn(responseStream);
+
+      Result result = processor.writeStatusResponse(context);
+
+      assertThat("Result is Success", result.equals(Result.SUCCESS));
+      verify(objectMapper).writeValue(responseStream, healthComponent);
+      verify(responseStream).close();
+    }
   }
 
   private void setUpRelayedHttpRequestMock()

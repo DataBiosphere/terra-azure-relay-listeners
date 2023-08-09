@@ -17,6 +17,7 @@ public class Utils {
   public static final Logger logger = LoggerFactory.getLogger(Utils.class);
   public static final String TOKEN_NAME = "LeoToken";
   public static final String SET_COOKIE_API_PATH = "setcookie";
+  public static final String STATUS_API_PATH = "listenerstatus";
 
   public static final Optional<String> getTokenFromAuthorization(Map<String, String> headers) {
     var authValue = headers.getOrDefault(AUTHORIZATION, null);
@@ -84,5 +85,14 @@ public class Utils {
         .filter(s -> s.contains(String.format("%s=", Utils.TOKEN_NAME)))
         .findFirst()
         .map(s -> s.split("=")[1]);
+  }
+
+  public static boolean isStatusPath(URI uri) {
+    var splitted = uri.getPath().split("/");
+    if (splitted.length == 3) {
+      return splitted[2].equalsIgnoreCase(STATUS_API_PATH);
+    } else {
+      return false;
+    }
   }
 }

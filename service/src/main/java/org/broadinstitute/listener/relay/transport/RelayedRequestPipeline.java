@@ -84,6 +84,8 @@ public class RelayedRequestPipeline {
         .doOnDiscard(RelayedHttpListenerContext.class, httpRequestProcessor::writePreflightResponse)
         .filter(c -> listenerConnectionHandler.isNotSetCookie(c.getRequest()))
         .doOnDiscard(RelayedHttpListenerContext.class, httpRequestProcessor::writeSetCookieResponse)
+        .filter(c -> listenerConnectionHandler.isNotStatus(c.getRequest()))
+        .doOnDiscard(RelayedHttpListenerContext.class, httpRequestProcessor::writeStatusResponse)
         .flatMap(
             (c) ->
                 Mono.fromCallable(

@@ -94,7 +94,7 @@ jobs:
       - name: Push Container image
         run: |
           echo ${{ secrets.ACR_SP_PASSWORD }} | docker login ${ACR_REGISTRY} \
-          --username ${{ secrets.ACR_SP_USERNAME }} \
+          --username ${{ secrets.ACR_SP_USER }} \
           --password-stdin
 
           docker push ${{ steps.image-name.outputs.name }}

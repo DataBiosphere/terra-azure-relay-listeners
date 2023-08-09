@@ -38,3 +38,17 @@ listener:
     maxAge: "1728000"
     contentSecurityPolicy: "frame-ancestors http://localhost:3000;report-uri https://terra.report-uri.com/r/d/csp/reportOnly"
     validHosts:
+
+# Spring actuator config.
+# See: https://docs.spring.io/spring-boot/docs/current/actuator-api/htmlsingle/
+# For now only enable the health endpoint; and only liveness/readiness probes within the health endpoint.
+management:
+  endpoints:
+    enabled-by-default: false
+    web.exposure.include: health
+  endpoint:
+    health:
+      enabled: true
+      probes.enabled: true
+  health:
+    defaults.enabled: false

@@ -42,7 +42,7 @@ public class SamResourceClient {
         var resourceApi = new ResourcesApi(samClient);
 
         // check that user has access to workspace
-        var workspaceAccess = resourceApi.resourcePermissionV2("workspace", samResourceId, "read");
+        boolean workspaceAccess = resourceApi.resourcePermissionV2("workspace", samResourceId, "read");
         if (!workspaceAccess) {
           logger.error("Unauthorized request. User doesn't have access to workspace");
           return Instant.EPOCH;

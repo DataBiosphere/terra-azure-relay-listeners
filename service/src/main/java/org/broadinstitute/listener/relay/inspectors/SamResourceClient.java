@@ -2,6 +2,7 @@ package org.broadinstitute.listener.relay.inspectors;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.UUID;
 import org.broadinstitute.dsde.workbench.client.sam.ApiClient;
 import org.broadinstitute.dsde.workbench.client.sam.ApiException;
 import org.broadinstitute.dsde.workbench.client.sam.api.ResourcesApi;
@@ -10,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 
 public class SamResourceClient {
+  private final UUID workspaceId;
   private final String samResourceId;
   private final String samResourceType;
   private final TokenChecker tokenChecker;
@@ -19,11 +21,13 @@ public class SamResourceClient {
   private final Logger logger = LoggerFactory.getLogger(SamResourceClient.class);
 
   public SamResourceClient(
+      UUID workspaceId,
       String samResourceId,
       String samResourceType,
       ApiClient samClient,
       TokenChecker tokenChecker,
       String samAction) {
+    this.workspaceId = workspaceId;
     this.samResourceId = samResourceId;
     this.samResourceType = samResourceType;
     this.tokenChecker = tokenChecker;
@@ -42,9 +46,10 @@ public class SamResourceClient {
         var resourceApi = new ResourcesApi(samClient);
 
         // check that user has access to workspace
-        boolean workspaceAccess = resourceApi.resourcePermissionV2("workspace", samResourceId, "read");
+        boolean workspaceAccess =
+            resourceApi.resourcePermissionV2("workspace", workspaceId.toString(), "read");
         if (!workspaceAccess) {
-          logger.error("Unauthorized request. User doesn't have access to workspace");
+          logger.error("Unauthorized request. User doesn't have access to workspace.");
           return Instant.EPOCH;
         }
 

@@ -45,6 +45,7 @@ public class AppConfiguration {
     samClient.setBasePath(properties.getSamInspectorProperties().samUrl());
     // return a simple resolver that uses the configuration value.
     return new SamResourceClient(
+        properties.getSetDateAccessedInspectorProperties().workspaceId(),
         properties.getSamInspectorProperties().samResourceId(),
         properties.getSamInspectorProperties().samResourceType(),
         samClient,

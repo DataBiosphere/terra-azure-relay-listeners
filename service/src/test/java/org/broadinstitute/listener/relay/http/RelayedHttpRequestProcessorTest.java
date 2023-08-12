@@ -4,8 +4,10 @@ import static com.google.common.net.HttpHeaders.CONTENT_SECURITY_POLICY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,10 +35,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 import org.broadinstitute.listener.config.CorsSupportProperties;
 import org.broadinstitute.listener.relay.InvalidRelayTargetException;
 import org.broadinstitute.listener.relay.http.RelayedHttpRequestProcessor.Result;
 import org.broadinstitute.listener.relay.inspectors.GoogleTokenInfoClient;
+import org.broadinstitute.listener.relay.inspectors.SamResourceClient;
 import org.broadinstitute.listener.relay.inspectors.TokenChecker;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.junit.jupiter.api.BeforeEach;
@@ -78,6 +82,7 @@ class RelayedHttpRequestProcessorTest {
   @Mock private HealthEndpoint healthEndpoint;
   @Mock private ObjectMapper objectMapper;
   @Mock private HealthComponent healthComponent;
+  @Mock private SamResourceClient samResourceClient;
   @Captor private ArgumentCaptor<byte[]> responseData;
 
   private Map<String, List<String>> targetResponseHeaders;
@@ -110,7 +115,8 @@ class RelayedHttpRequestProcessorTest {
             new CorsSupportProperties("dummy", "dummy", "dummy", "dummy", validHosts),
             new TokenChecker(new GoogleTokenInfoClient()),
             healthEndpoint,
-            objectMapper);
+            objectMapper,
+            samResourceClient);
   }
 
   @Test
@@ -255,7 +261,7 @@ class RelayedHttpRequestProcessorTest {
   }
 
   @Test
-  void writeStatusReponse_notOk() throws IOException {
+  void writeStatusResponse_notOk() throws IOException {
     when(context.getResponse()).thenReturn(listenerResponse);
     when(healthComponent.getStatus()).thenReturn(Status.DOWN);
     when(healthEndpoint.health()).thenReturn(healthComponent);
@@ -270,6 +276,66 @@ class RelayedHttpRequestProcessorTest {
       verify(objectMapper).writeValue(responseStream, healthComponent);
       verify(responseStream).close();
     }
+  }
+
+  @Test
+  void writeSetCookieResponse_ok() throws IOException {
+    when(context.getResponse()).thenReturn(listenerResponse);
+    Map<String, String> headers = new HashMap<>();
+    when(listenerResponse.getHeaders()).thenReturn(headers);
+    when(context.getRequest()).thenReturn(listenerRequest);
+    requestHeaders.put("Authorization", "Bearer token");
+    when(listenerRequest.getHeaders()).thenReturn(requestHeaders);
+    when(samResourceClient.isUserEnabled(anyString())).thenReturn(true);
+
+    var expectedCorsHeaders =
+        Set.of(
+            "Access-Control-Allow-Origin",
+            "Access-Control-Allow-Methods",
+            "Access-Control-Allow-Credentials",
+            "Content-Security-Policy",
+            "Access-Control-Max-Age",
+            "Access-Control-Allow-Headers");
+
+    try (MockedStatic<RelayedHttpRequestProcessor> mock =
+        mockStatic(RelayedHttpRequestProcessor.class)) {
+      mock.when(() -> RelayedHttpRequestProcessor.getOutputStreamFromContext(any()))
+          .thenReturn(responseStream);
+      // Test
+      Result result = processor.writeSetCookieResponse(context);
+      assertThat("Result is Success", result.equals(Result.SUCCESS));
+      // Verify Set-Cookie response header
+      assertThat(
+          listenerResponse.getHeaders(),
+          hasEntry("Set-Cookie", "LeoToken=token; Max-Age=0; Path=/; Secure; SameSite=None;"));
+      // Verify CORS headers were set
+      expectedCorsHeaders.forEach(h -> assertThat(listenerResponse.getHeaders(), hasKey(h)));
+      verify(samResourceClient).isUserEnabled(anyString());
+      verify(responseStream).close();
+    }
+  }
+
+  @Test
+  void writeSetCookieResponse_invalidOrigin() {
+    when(context.getResponse()).thenReturn(listenerResponse);
+    when(context.getRequest()).thenReturn(listenerRequest);
+    requestHeaders_invalidOrigin.put("Authorization", "Bearer token");
+    when(listenerRequest.getHeaders()).thenReturn(requestHeaders_invalidOrigin);
+
+    Result result = processor.writeSetCookieResponse(context);
+    assertThat("Result is Failure", result.equals(Result.FAILURE));
+  }
+
+  @Test
+  void writeSetCookieResponse_userDisabled() {
+    when(context.getResponse()).thenReturn(listenerResponse);
+    when(context.getRequest()).thenReturn(listenerRequest);
+    requestHeaders.put("Authorization", "Bearer token");
+    when(listenerRequest.getHeaders()).thenReturn(requestHeaders);
+    when(samResourceClient.isUserEnabled(anyString())).thenReturn(false);
+
+    Result result = processor.writeSetCookieResponse(context);
+    assertThat("Result is Failure", result.equals(Result.FAILURE));
   }
 
   private void setUpRelayedHttpRequestMock()

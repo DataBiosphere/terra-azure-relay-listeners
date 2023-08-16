@@ -37,23 +37,23 @@ public class ListenerConnectionHandler {
     return this.inspectorsProcessor.isRelayedHttpRequestAccepted(listenerRequest);
   }
 
-  public boolean isNotPreflight(RelayedHttpListenerRequest listenerRequest) {
+  public boolean isPreflight(RelayedHttpListenerRequest listenerRequest) {
     // TODO: security enhancements, validate origin is valid
-    return !listenerRequest.getHttpMethod().equals("OPTIONS");
+    return listenerRequest.getHttpMethod().equals("OPTIONS");
   }
 
-  public boolean isNotSetCookie(RelayedHttpListenerRequest listenerRequest) {
+  public boolean isSetCookie(RelayedHttpListenerRequest listenerRequest) {
     var isSetCookieRequest =
         listenerRequest.getHttpMethod().equals("GET")
             && Utils.isSetCookiePath(listenerRequest.getUri());
-    return !isSetCookieRequest;
+    return isSetCookieRequest;
   }
 
-  public boolean isNotStatus(RelayedHttpListenerRequest listenerRequest) {
+  public boolean isStatus(RelayedHttpListenerRequest listenerRequest) {
     var isStatusRequest =
         listenerRequest.getHttpMethod().equals("GET")
             && Utils.isStatusPath(listenerRequest.getUri());
-    return !isStatusRequest;
+    return isStatusRequest;
   }
 
   public boolean isRelayedWebSocketUpgradeRequestAcceptedByInspectors(

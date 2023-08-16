@@ -43,17 +43,13 @@ public class ListenerConnectionHandler {
   }
 
   public boolean isSetCookie(RelayedHttpListenerRequest listenerRequest) {
-    var isSetCookieRequest =
-        listenerRequest.getHttpMethod().equals("GET")
-            && Utils.isSetCookiePath(listenerRequest.getUri());
-    return isSetCookieRequest;
+    return listenerRequest.getHttpMethod().equals("GET")
+        && Utils.isSetCookiePath(listenerRequest.getUri());
   }
 
   public boolean isStatus(RelayedHttpListenerRequest listenerRequest) {
-    var isStatusRequest =
-        listenerRequest.getHttpMethod().equals("GET")
-            && Utils.isStatusPath(listenerRequest.getUri());
-    return isStatusRequest;
+    return listenerRequest.getHttpMethod().equals("GET")
+        && Utils.isStatusPath(listenerRequest.getUri());
   }
 
   public boolean isRelayedWebSocketUpgradeRequestAcceptedByInspectors(

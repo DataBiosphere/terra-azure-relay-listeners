@@ -80,12 +80,18 @@ public class RelayedRequestPipeline {
     listenerConnectionHandler
         .receiveRelayedHttpRequests()
         .publishOn(scheduler)
-        .filter(c -> listenerConnectionHandler.isNotPreflight(c.getRequest()))
-        .doOnDiscard(RelayedHttpListenerContext.class, httpRequestProcessor::writePreflightResponse)
-        .filter(c -> listenerConnectionHandler.isNotSetCookie(c.getRequest()))
-        .doOnDiscard(RelayedHttpListenerContext.class, httpRequestProcessor::writeSetCookieResponse)
-        .filter(c -> listenerConnectionHandler.isNotStatus(c.getRequest()))
-        .doOnDiscard(RelayedHttpListenerContext.class, httpRequestProcessor::writeStatusResponse)
+        .<RelayedHttpListenerContext>handle(
+            (c, sink) -> {
+              if (listenerConnectionHandler.isPreflight(c.getRequest())) {
+                httpRequestProcessor.writePreflightResponse(c);
+              } else if (listenerConnectionHandler.isSetCookie(c.getRequest())) {
+                httpRequestProcessor.writeSetCookieResponse(c);
+              } else if (listenerConnectionHandler.isStatus(c.getRequest())) {
+                httpRequestProcessor.writeStatusResponse(c);
+              } else {
+                sink.next(c);
+              }
+            })
         .flatMap(
             (c) ->
                 Mono.fromCallable(

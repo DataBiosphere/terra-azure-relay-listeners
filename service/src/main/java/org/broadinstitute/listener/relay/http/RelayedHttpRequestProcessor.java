@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.broadinstitute.listener.config.CorsSupportProperties;
 import org.broadinstitute.listener.relay.Utils;
 import org.broadinstitute.listener.relay.inspectors.RequestLogger;
+import org.broadinstitute.listener.relay.inspectors.SamResourceClient;
 import org.broadinstitute.listener.relay.inspectors.TokenChecker;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
 import org.slf4j.Logger;
@@ -40,6 +41,7 @@ public class RelayedHttpRequestProcessor {
   private final TokenChecker tokenChecker;
   private final HealthEndpoint healthEndpoint;
   private final ObjectMapper objectMapper;
+  private final SamResourceClient samResourceClient;
 
   protected final Logger logger = LoggerFactory.getLogger(RelayedHttpRequestProcessor.class);
 
@@ -48,13 +50,15 @@ public class RelayedHttpRequestProcessor {
       CorsSupportProperties corsSupportProperties,
       TokenChecker tokenChecker,
       HealthEndpoint healthEndpoint,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      SamResourceClient samResourceClient) {
     this.httpClient = HttpClient.newBuilder().version(Version.HTTP_1_1).build();
     this.targetHostResolver = targetHostResolver;
     this.corsSupportProperties = corsSupportProperties;
     this.tokenChecker = tokenChecker;
     this.healthEndpoint = healthEndpoint;
     this.objectMapper = objectMapper;
+    this.samResourceClient = samResourceClient;
   }
 
   public RelayedHttpRequestProcessor(
@@ -63,13 +67,15 @@ public class RelayedHttpRequestProcessor {
       CorsSupportProperties corsSupportProperties,
       TokenChecker tokenChecker,
       HealthEndpoint healthEndpoint,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      SamResourceClient samResourceClient) {
     this.httpClient = httpClient;
     this.targetHostResolver = targetHostResolver;
     this.corsSupportProperties = corsSupportProperties;
     this.tokenChecker = tokenChecker;
     this.healthEndpoint = healthEndpoint;
     this.objectMapper = objectMapper;
+    this.samResourceClient = samResourceClient;
   }
 
   public TargetHttpResponse executeRequestOnTarget(RelayedHttpListenerContext requestContext) {
@@ -157,51 +163,59 @@ public class RelayedHttpRequestProcessor {
       return Result.FAILURE;
     }
 
+    // Get token from request
     var authToken = Utils.getTokenFromAuthorization(context.getRequest().getHeaders());
-    if (authToken.isEmpty()) return Result.FAILURE;
-    else {
-      try {
-        Map<String, String> requestHeaders = context.getRequest().getHeaders();
+    if (authToken.isEmpty()) {
+      return Result.FAILURE;
+    }
 
-        if (!Utils.isValidOrigin(
-            requestHeaders.getOrDefault("Origin", ""), corsSupportProperties)) {
-          logger.error(
-              String.format(
-                  "Origin %s not allowed. Error Code: RHRP-002",
-                  requestHeaders.getOrDefault("Origin", "")));
-          return Result.FAILURE;
-        }
+    Map<String, String> requestHeaders = context.getRequest().getHeaders();
 
-        var oauthInfo = tokenChecker.getOauthInfo(authToken.get());
+    // Check Origin header of the request
+    if (!Utils.isValidOrigin(requestHeaders.getOrDefault("Origin", ""), corsSupportProperties)) {
+      logger.error(
+          String.format(
+              "Origin %s not allowed. Error Code: RHRP-002",
+              requestHeaders.getOrDefault("Origin", "")));
+      return Result.FAILURE;
+    }
 
-        var now = Instant.now();
-        Optional<Long> expiresIn =
-            oauthInfo.expiresAt().map(i -> i.getEpochSecond() - now.getEpochSecond());
-
-        RelayedHttpListenerResponse listenerResponse = context.getResponse();
-        listenerResponse.setStatusCode(204);
-
-        listenerResponse
-            .getHeaders()
-            .put(
-                SET_COOKIE,
-                String.format(
-                    "%s=%s; Max-Age=%s; Path=/; Secure; SameSite=None;",
-                    Utils.TOKEN_NAME, authToken.get(), expiresIn.orElse(0L)));
-
-        Utils.writeCORSHeaders(
-            listenerResponse.getHeaders(),
-            context.getRequest().getHeaders(),
-            corsSupportProperties);
-
-        listenerResponse.getOutputStream().close();
-      } catch (IOException e) {
-        logger.error("Failed to close response body to the remote client.", e);
-        return Result.FAILURE;
-      } catch (InterruptedException e) {
-        logger.error("Fail to Decode token", e);
+    try {
+      // Check Sam enablement
+      var enabled = samResourceClient.isUserEnabled(authToken.get());
+      if (!enabled) {
+        logger.error("Sam user is not enabled");
         return Result.FAILURE;
       }
+
+      // Get JWT expiration
+      var oauthInfo = tokenChecker.getOauthInfo(authToken.get());
+      var now = Instant.now();
+      Optional<Long> expiresIn =
+          oauthInfo.expiresAt().map(i -> i.getEpochSecond() - now.getEpochSecond());
+
+      // Write response
+      RelayedHttpListenerResponse listenerResponse = context.getResponse();
+      listenerResponse.setStatusCode(204);
+
+      listenerResponse
+          .getHeaders()
+          .put(
+              SET_COOKIE,
+              String.format(
+                  "%s=%s; Max-Age=%s; Path=/; Secure; SameSite=None;",
+                  Utils.TOKEN_NAME, authToken.get(), expiresIn.orElse(0L)));
+
+      Utils.writeCORSHeaders(
+          listenerResponse.getHeaders(), context.getRequest().getHeaders(), corsSupportProperties);
+
+      getOutputStreamFromContext(context).close();
+    } catch (IOException e) {
+      logger.error("Failed to close response body to the remote client.", e);
+      return Result.FAILURE;
+    } catch (InterruptedException e) {
+      logger.error("Fail to decode token", e);
+      return Result.FAILURE;
     }
 
     return Result.SUCCESS;

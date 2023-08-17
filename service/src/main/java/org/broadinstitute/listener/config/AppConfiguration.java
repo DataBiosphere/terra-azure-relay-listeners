@@ -10,7 +10,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.util.ArrayList;
 import java.util.List;
-import org.broadinstitute.dsde.workbench.client.sam.ApiClient;
 import org.broadinstitute.listener.relay.http.RelayedHttpRequestProcessor;
 import org.broadinstitute.listener.relay.inspectors.InspectorLocator;
 import org.broadinstitute.listener.relay.inspectors.InspectorsProcessor;
@@ -41,14 +40,11 @@ public class AppConfiguration {
 
   @Bean
   public SamResourceClient samResourceClient(TokenChecker tokenChecker) {
-    ApiClient samClient = new ApiClient();
-    samClient.setBasePath(properties.getSamInspectorProperties().samUrl());
-    // return a simple resolver that uses the configuration value.
     return new SamResourceClient(
         properties.getSetDateAccessedInspectorProperties().workspaceId(),
+        properties.getSamInspectorProperties().samUrl(),
         properties.getSamInspectorProperties().samResourceId(),
         properties.getSamInspectorProperties().samResourceType(),
-        samClient,
         tokenChecker,
         properties.getSamInspectorProperties().samAction());
   }
@@ -68,13 +64,15 @@ public class AppConfiguration {
       TargetResolver targetResolver,
       TokenChecker tokenChecker,
       HealthEndpoint healthEndpoint,
-      ObjectMapper objectMapper) {
+      ObjectMapper objectMapper,
+      SamResourceClient samResourceClient) {
     return new RelayedHttpRequestProcessor(
         targetResolver,
         properties.getCorsSupportProperties(),
         tokenChecker,
         healthEndpoint,
-        objectMapper);
+        objectMapper,
+        samResourceClient);
   }
 
   @Bean

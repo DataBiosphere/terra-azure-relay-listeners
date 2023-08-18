@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import org.broadinstitute.dsde.workbench.client.sam.ApiClient;
 import org.broadinstitute.dsde.workbench.client.sam.ApiException;
 import org.broadinstitute.dsde.workbench.client.sam.ApiResponse;
@@ -35,7 +36,8 @@ class SamResourceClientTest {
 
   @Spy
   private SamResourceClient samResourceClient =
-      new SamResourceClient("samUrl", "resourceId", "resourceType", tokenChecker, "myaction");
+      new SamResourceClient(
+          UUID.randomUUID(), "samUrl", "resourceId", "resourceType", tokenChecker, "myaction");
 
   @BeforeEach
   void setUp() throws IOException, InterruptedException, ApiException {
@@ -68,6 +70,23 @@ class SamResourceClientTest {
 
     var res = samResourceClient.checkPermission("accessToken");
 
+    assertThat(res, equalTo(Instant.EPOCH));
+  }
+
+  @Test
+  void checkPermission_no_workspace_access()
+      throws IOException, InterruptedException, ApiException {
+    var expiresAt = Instant.now().plusSeconds(100);
+    var oauthResponse =
+        new OauthInfo(Optional.of(expiresAt), "", Map.of("email", "example@example.com"));
+    // check for workspace read access returns false
+    var apiResponse = new ApiResponse(200, Map.of(), false);
+
+    when(tokenChecker.getOauthInfo(any())).thenReturn(oauthResponse);
+    when(apiClient.execute(any(), any())).thenReturn(apiResponse);
+    when(apiClient.escapeString(any())).thenReturn("string");
+
+    var res = samResourceClient.checkPermission("accessToken");
     assertThat(res, equalTo(Instant.EPOCH));
   }
 

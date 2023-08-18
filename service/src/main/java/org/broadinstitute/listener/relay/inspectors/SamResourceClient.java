@@ -3,6 +3,7 @@ package org.broadinstitute.listener.relay.inspectors;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.UUID;
 import okhttp3.OkHttpClient;
 import org.broadinstitute.dsde.workbench.client.sam.ApiClient;
 import org.broadinstitute.dsde.workbench.client.sam.ApiException;
@@ -13,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 
 public class SamResourceClient {
+  private final UUID workspaceId;
   private final String samUrl;
   private final String samResourceId;
   private final String samResourceType;
@@ -23,11 +25,13 @@ public class SamResourceClient {
   private final Logger logger = LoggerFactory.getLogger(SamResourceClient.class);
 
   public SamResourceClient(
+      UUID workspaceId,
       String samUrl,
       String samResourceId,
       String samResourceType,
       TokenChecker tokenChecker,
       String samAction) {
+    this.workspaceId = workspaceId;
     this.samUrl = samUrl;
     this.samResourceId = samResourceId;
     this.samResourceType = samResourceType;
@@ -45,6 +49,14 @@ public class SamResourceClient {
 
         var apiClient = getApiClient(accessToken);
         var resourceApi = new ResourcesApi(apiClient);
+
+        // check that user has access to workspace
+        boolean workspaceAccess =
+            resourceApi.resourcePermissionV2("workspace", workspaceId.toString(), "read");
+        if (!workspaceAccess) {
+          logger.error("Unauthorized request. User doesn't have access to workspace.");
+          return Instant.EPOCH;
+        }
 
         var res = resourceApi.resourcePermissionV2(samResourceType, samResourceId, samAction);
         if (res) return oauthInfo.expiresAt().get();

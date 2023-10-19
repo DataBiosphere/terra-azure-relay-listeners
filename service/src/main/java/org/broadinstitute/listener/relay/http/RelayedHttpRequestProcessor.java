@@ -33,7 +33,6 @@ import org.springframework.boot.actuate.health.HealthEndpoint;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.lang.NonNull;
 import com.auth0.jwt.JWTVerifier;
-import com.auth0.jwt.interfaces.DecodedJWT;
 
 public class RelayedHttpRequestProcessor {
 
@@ -171,8 +170,8 @@ public class RelayedHttpRequestProcessor {
       return Result.FAILURE;
     }
     // Verify the JWT signature
-    JWTVerifier.BaseVerification verifier = (JWTVerifier.BaseVerification);
-    DecodedJWT authToken = verifier.build().verify(unverifiedAuthToken.toString());
+    verifier = (JWTVerifier.BaseVerification);
+    authToken = verifier.build().verify(unverifiedAuthToken.toString()).getToken();
 
     Map<String, String> requestHeaders = context.getRequest().getHeaders();
 

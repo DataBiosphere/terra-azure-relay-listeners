@@ -170,8 +170,8 @@ public class RelayedHttpRequestProcessor {
       return Result.FAILURE;
     }
     // Verify the JWT signature
-    verifier = (JWTVerifier.BaseVerification);
-    authToken = verifier.build().verify(unverifiedAuthToken.toString()).getToken();
+    JWTVerifier.BaseVerification verifier = (JWTVerifier.BaseVerification);
+    String authToken = verifier.build().verify(unverifiedAuthToken.toString()).getToken();
 
     Map<String, String> requestHeaders = context.getRequest().getHeaders();
 

@@ -5,7 +5,6 @@ import com.microsoft.azure.relay.RelayedHttpListenerRequest;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.Map;
 import org.broadinstitute.listener.relay.InvalidRelayTargetException;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
@@ -56,12 +55,6 @@ public class RelayedHttpRequest extends HttpMessage {
 
     RelayedHttpListenerRequest listenerRequest = context.getRequest();
 
-    Map<String, String> relayedHeaders = null;
-
-    if (listenerRequest.getHeaders() != null) {
-      relayedHeaders = new HashMap<>(listenerRequest.getHeaders());
-    }
-
     InputStream relayedBody = null;
 
     if (!listenerRequest.getHttpMethod().equals("GET")
@@ -71,6 +64,8 @@ public class RelayedHttpRequest extends HttpMessage {
 
     URL targetUrl = targetResolver.createTargetUrl(listenerRequest.getUri());
     URI targetWebSocketUri = targetResolver.createTargetWebSocketUri(listenerRequest.getUri());
+    Map<String, String> relayedHeaders =
+        targetResolver.createTargetHeaders(listenerRequest.getHeaders());
 
     return new RelayedHttpRequest(
         targetUrl,

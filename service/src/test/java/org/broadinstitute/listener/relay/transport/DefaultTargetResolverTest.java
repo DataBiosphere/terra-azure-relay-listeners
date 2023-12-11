@@ -2,12 +2,14 @@ package org.broadinstitute.listener.relay.transport;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.apache.http.client.utils.URIBuilder;
 import org.broadinstitute.listener.config.ListenerProperties;
 import org.broadinstitute.listener.config.TargetProperties;
@@ -156,6 +158,51 @@ class DefaultTargetResolverTest {
     assertThat(
         target.toString(),
         equalTo(getExpectedTargetUrl(UriUtils.encodePath(TARGET_PATH_WITH_SPACE, "UTF-8"))));
+  }
+
+  @Test
+  void createTargetHeaders_authorization() {
+    var relayHeaders =
+        Map.of(
+            "Content-Type",
+            "application/json",
+            "Authorization",
+            "Bearer abcd",
+            "Content-Length",
+            "42");
+    var targetHeaders = resolver.createTargetHeaders(relayHeaders);
+
+    assertThat(targetHeaders, equalTo(relayHeaders));
+  }
+
+  @Test
+  void createTargetHeaders_removeAuthorization() {
+    var properties = new ListenerProperties();
+    properties.setTargetProperties(new TargetProperties());
+    properties.getTargetProperties().setTargetHost("http://" + TARGET_HOST);
+    properties.getTargetProperties().setRemoveAuthorizationHeader(true);
+    properties.setRelayConnectionName(HYBRID_CONN);
+    var resolver = new DefaultTargetResolver(properties);
+
+    var relayHeaders =
+        Map.of(
+            "Content-Type",
+            "application/json",
+            "Authorization",
+            "Bearer abcd",
+            "Content-Length",
+            "42");
+    var targetHeaders = resolver.createTargetHeaders(relayHeaders);
+
+    assertThat(
+        targetHeaders, equalTo(Map.of("Content-Type", "application/json", "Content-Length", "42")));
+  }
+
+  @Test
+  void createTargetHeaders_null() {
+    var targetHeaders = resolver.createTargetHeaders(null);
+
+    assertThat(targetHeaders, nullValue());
   }
 
   private URI createRelayRequest(String path, String query, boolean addWSSegment)

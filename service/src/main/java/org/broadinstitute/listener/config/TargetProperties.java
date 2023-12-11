@@ -7,6 +7,7 @@ public class TargetProperties {
   private boolean removeEntityPathFromHttpUrl = false;
   private String targetHost;
   private List<TargetRoutingRule> targetRoutingRules;
+  private boolean removeAuthorizationHeader = false;
 
   public boolean isRemoveEntityPathFromWssUri() {
     return removeEntityPathFromWssUri;
@@ -38,5 +39,13 @@ public class TargetProperties {
 
   public void setTargetRoutingRules(List<TargetRoutingRule> targetRoutingRules) {
     this.targetRoutingRules = targetRoutingRules;
+  }
+
+  public boolean isRemoveAuthorizationHeader() {
+    return removeAuthorizationHeader;
+  }
+
+  public void setRemoveAuthorizationHeader(boolean removeAuthorizationHeader) {
+    this.removeAuthorizationHeader = removeAuthorizationHeader;
   }
 }

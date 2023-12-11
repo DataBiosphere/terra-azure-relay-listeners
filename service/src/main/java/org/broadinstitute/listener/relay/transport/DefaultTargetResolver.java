@@ -2,7 +2,9 @@ package org.broadinstitute.listener.relay.transport;
 
 import java.net.URI;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.broadinstitute.listener.config.ListenerProperties;
 import org.broadinstitute.listener.config.TargetRoutingRule;
@@ -47,6 +49,20 @@ public class DefaultTargetResolver implements TargetResolver {
 
     return createTargetUrl(
         relayedRequestUri, properties.getTargetProperties().isRemoveEntityPathFromHttpUrl());
+  }
+
+  @Override
+  public Map<String, String> createTargetHeaders(Map<String, String> relayedHeaders) {
+    Map<String, String> targetHeaders = null;
+
+    if (relayedHeaders != null) {
+      targetHeaders = new HashMap<>(relayedHeaders);
+      if (properties.getTargetProperties().isRemoveAuthorizationHeader()) {
+        targetHeaders.remove("Authorization");
+      }
+    }
+
+    return targetHeaders;
   }
 
   private TargetRule resolveTargetRule(@NonNull URI relayedRequestUri, boolean removeEntityPath) {

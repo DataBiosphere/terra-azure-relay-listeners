@@ -8,31 +8,79 @@ spring:
     caffeine.spec: maximumSize=100,expireAfterWrite=90s
 
 listener:
+  # Connection string for the Azure Relay instance.
+  #
+  # e.g.:
+  #  relayConnectionString: "Endpoint=<END-PONT>;SharedAccessKeyName=<SAS TOKEN>;EntityPath=<HYBRID CONNECTION>`
+  #
+  # NOTE: The connection string must contain an EntityPath parameter. The value of EntityPath must be the same as the `relayConnectionName`.
   relayConnectionString:
+
+  # EntityPath / Hybrid Connection name
+  #
+  # NOTE: This MUST be the same value as the EntityPath set in the `relayConnectionString`
   relayConnectionName:
+
+  # `targetProperties.removeEntityPathFromHttpUrl`:
+  # - If `true` the HTTP request to the target won't include the Entity Path (Hybrid Connection name) in the URL. The default value is `false`.
   targetProperties:
+    # The default local or private endpoint where the listener must forward all requests
     targetHost:
+
+    # A list of routing rules
+    # A rule is a tuple of
+    # - the string the URI must contain for a match (`pathContains`),
+    # - the target host (`targetHost`), and
+    # - an optional segment to remove from the URI when constructing the target path (`removeFromPath`)
     targetRoutingRules:
       -
         pathContains: "welder"
+        # The default `targetHost` is used if the request URI does not match any rule.
         targetHost: "http://localhost:8081"
+        # Specify path segments the listener must remove when creating the target URI by using the property `removeFromPath`.
+        # In the value, you can use `$hc-name` to represent the hybrid connection name (entity path) as a segment to remove.
+        # The listener replaces `$hc-name` with the value in `relayConnectionName` to construct the string to find in the URI at runtime.
         removeFromPath: "$hc-name/welder"
+
+  # A list of request inspectors to be enabled
+  #
+  # NOTE: Each inspector may have additional configuration properties
   requestInspectors:
 #    - headersLogger
+    # By using the `samChecker`-inspector,
+    # the Listener can be configured to only allow access for users
+    # that have write access to a specific Sam resource.
     - samChecker
+    # The `setDateAccessed`-inspector enables a callback to Leo using the auth token of the user.
+    # This call enables Leo to track last access times of runtimes to support auto-pausing functionality.
 #    - setDateAccessed
-  setDateAccessedInspectorProperties:
-    serviceHost:
-    workspaceId:
-    callWindowInSeconds: 60
-    runtimeName:
 
   samInspectorProperties:
+    # URL to the Sam instance we should talk to
     samUrl:
+    # The id of the Sam resource to check access to
     samResourceId:
+    # The type of the Sam resource to check access to.
+    # Defaults to `controlled-application-private-workspace-resource`, which corresponds Leo-managed resources
     samResourceType: "controlled-application-private-workspace-resource"
+    # The Sam action to check. Default value is `write`
     samAction: "write"
+
+  setDateAccessedInspectorProperties:
+    # Leo server host
+    serviceHost:
+    # ID of the workspace containing the runtime instance
+    workspaceId:
+    # The time period, in seconds, in which at most one call is made to the `serviceHost`
+    # regardless of the number of requests made to the listener during that period
+    callWindowInSeconds: 60
+    # Runtime name of the instance associated with the listener;
+    # this value is part of the request to Leo
+    runtimeName:
+
   corsSupportProperties:
+    # HTTP-methods that we support for CORS.
+    # Default to `OPTIONS, POST, PUT, GET, DELETE, HEAD, PATCH`
     preflightMethods: "OPTIONS, POST, PUT, GET, DELETE, HEAD, PATCH"
     allowHeaders: "Authorization, Content-Type, Accept, Origin,X-App-Id"
     maxAge: "1728000"

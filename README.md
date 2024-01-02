@@ -2,90 +2,21 @@
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=DataBiosphere_terra-azure-relay-listeners&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=DataBiosphere_terra-azure-relay-listeners)
 
-The Terra Azure Relay Listener enables secure communications with private resources deployed in a customer subscription using Azure Relay.
+The Terra Azure Relay Listener enables secure bidirectional communication with private resources
+deployed in a customer subscription using the
+[Azure Relay](https://learn.microsoft.com/en-us/azure/azure-relay/relay-what-is-it).
 
-The Terra Azure Relay Listener establishes a bi-directional channel with Azure Relay. Once the channel is established, the listener forwards HTTP requests to a private endpoint and returns the responses to the caller. The listener also supports WebSockets. The listener establishes a persistent WebSocket connection with the private resource and forwards data bidirectionally to and from the caller and private endpoint.
+Once the channel is established, the listener forwards HTTP requests to a private endpoint and
+returns the responses to the caller. The listener also supports WebSockets.
+The listener establishes a persistent WebSocket connection with the private resource and
+forwards data bidirectionally to and from the caller and private endpoint.
 
 ## Configuration Properties
 
-`listener.relayConectionString`: Connection string for the Azure Relay instance.  e.g.:
-
-```yaml
-  relayConnectionString: "Endpoint=<END-PONT>;SharedAccessKeyName=<SAS TOKEN>;EntityPath=<HYBRID CONNECTION>`
-
-```
-
->*Note*: The connection string must contain an EntityPath parameter.
-> The value of EntityPath must be the Hybrid Connection name.
-
-`relayConnectionName`: Hybrid Connection name. Must the same value as the EntityPath.
-
-`listener.targetProperties.targetHost`: The default local or private endpoint where the listener must forward all requests.
-
-`requestInspectors`: A list of request inspectors to be enabled.
-
-`listener.targetProperties.removeEntityPathFromHttpUrl` If `true` the HTTP request to the target won't include the Entity Path (Hybrid Connection name) in the URL. The default value is `false`.
-
-`listener.corsSupportProperties.preflightMethods` Methods that we support CORS. Default to `OPTIONS, POST, PUT, GET, DELETE, HEAD, PATCH`.
-
-`listener.targetProperties.targetRoutingRules` A list of routing rules. A rule is a tuple of the string the URI must contain for a match and the target host.
-The default `targetHost` is used if the request URI does not match any rule.
-
-In a rule, you can specify path segments the listener must remove when creating the target URI
-by using the property `removeFromPath`. In the value, you can use `$hc-name` to represent the hybrid connection name (entity path) as a segment to remove. The listener replaces `$hc-name` with the value in `relayConnectionName` to construct the string to find in the URI at runtime.
-
-Example configuration:
-
-```yaml
-  targetProperties:
-    targetHost: "http://localhost:8080"
-    targetRoutingRules:
-      -
-        pathContains: "welder"
-        targetHost: "http://localhost:8081"
-        removeFromPath: "$hc-name/welder"
-```
-### Inspectors
-
-Inspectors are enabled via the property `requestInspectors`.
-
-Example:
-```yaml
-requestInspectors:
-    - samChecker
-    - setDateAccessed
-```
-
-Each inspector may have additional configuration properties.
-
-#### Sam Checker Inspector
-By using the Sam Checker inspector, the Listener can be configured to allow access only for users
-that have write access to a specific Sam resource.
-
-##### Configuration Properties
-
-`listener.samInspectorProperties.samUrl`: URL to the Sam instance we should talk to
-
-`listener.samInspectorProperties.samResourceId`: The id of the Sam resource to check access to
-
-`listener.samInspectorProperties.samResourceType`: The type of the Sam resource to check access to.
-Defaults to `controlled-application-private-workspace-resource`, which corresponds Leo-managed resources.
-
-`listener.samInspectorProperties.samAction`: The Sam action to check. Default value is `write`
-
-#### Set Date Accessed Inspector
-
-The `setDateAccessed` inspector enables a callback to Leo using the auth token of the user.
-Leo uses this call to determine if the runtime instance has been accessed recently and determine if auto-pausing is required.
-
-
-##### Configuration Properties
-`listener.setDateAccessedInspectorProperties.serviceHost`: Leo server host.
-`listener.setDateAccessedInspectorProperties.workspaceId`: ID of the workspace containing the runtime instance.
-`listener.setDateAccessedInspectorProperties.callWindowInSeconds`: The time window in seconds in which, at the most, one call is made to the endpoint regardless of the number of requests made during that period.
-`listener.setDateAccessedInspectorProperties.runtimeName` : Runtime name of the instance associated with the listener this value is part of the request to Leo.
+Configuration for the service is documented in the [`application.yml` file.](./service/src/main/resources/application.yml)
 
 ##### Usage
+
 By default, any request successfully relayed by this listener (a maximum of once per `callWindowInSeconds`) will trigger a request to PATCH `${serviceHost}/api/v2/runtimes/${workspaceId}/${runtimeName}/updateDateAccessed`. To tell the listener to pass a request without sending this PATCH, include the *custom HTTP header* `X-SetDateAccessedInspector-Action=ignore` in the request headers. For example, from a Scala service using Http4s, you could add the following to your `Headers()` object:
 
 ```

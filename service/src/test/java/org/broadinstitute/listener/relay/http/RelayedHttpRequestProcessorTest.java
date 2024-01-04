@@ -307,7 +307,8 @@ class RelayedHttpRequestProcessorTest {
       // Verify Set-Cookie response header
       assertThat(
           listenerResponse.getHeaders(),
-          hasEntry("Set-Cookie", "LeoToken=token; Max-Age=0; Path=/; Secure; SameSite=None; HttpOnly"));
+          hasEntry(
+              "Set-Cookie", "LeoToken=token; Max-Age=0; Path=/; Secure; SameSite=None; HttpOnly"));
       // Verify CORS headers were set
       expectedCorsHeaders.forEach(h -> assertThat(listenerResponse.getHeaders(), hasKey(h)));
       verify(samResourceClient).isUserEnabled(anyString());

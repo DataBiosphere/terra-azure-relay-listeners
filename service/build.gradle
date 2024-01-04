@@ -34,7 +34,7 @@ dependencies {
 	implementation 'com.auth0:java-jwt:3.19.1'
 	annotationProcessor 'org.immutables:value:2.8.8'
 	implementation group: 'com.google.guava', name: 'guava', version: '31.1-jre'
-	implementation('bio.terra:terra-common-lib:0.1.9-SNAPSHOT') {
+	implementation('bio.terra:terra-common-lib:0.1.10-SNAPSHOT') {
 		// remove transitive database deps
 		exclude group: 'org.liquibase', module: 'liquibase-core'
 		exclude group: 'bio.terra', module: 'stairway-gcp'

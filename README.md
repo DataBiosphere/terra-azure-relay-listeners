@@ -11,6 +11,20 @@ returns the responses to the caller. The listener also supports WebSockets.
 The listener establishes a persistent WebSocket connection with the private resource and
 forwards data bidirectionally to and from the caller and private endpoint.
 
+## Developer setup
+
+You need to have java installed.
+
+After that, all other interactions are through `gradlew[.bat]`.
+
+### Running the unit tests
+
+To run the unit tests, execute the following from your shell.
+
+```shell
+./gradlew test
+```
+
 ## Configuration Properties
 
 Configuration for the service is documented in the [`application.yml` file.](./service/src/main/resources/application.yml)

@@ -33,7 +33,8 @@ dependencies {
 	implementation 'org.jetbrains:annotations:20.1.0'
 	implementation 'com.auth0:java-jwt:3.19.1'
 	annotationProcessor 'org.immutables:value:2.8.8'
-	implementation('bio.terra:terra-common-lib:0.0.53-SNAPSHOT') {
+	implementation group: 'com.google.guava', name: 'guava', version: '31.1-jre'
+	implementation('bio.terra:terra-common-lib:0.1.10-SNAPSHOT') {
 		// remove transitive database deps
 		exclude group: 'org.liquibase', module: 'liquibase-core'
 		exclude group: 'bio.terra', module: 'stairway-gcp'
@@ -43,6 +44,7 @@ dependencies {
 	implementation 'org.broadinstitute.dsde.workbench:sam-client_2.13:0.1-cbcad54'
 	implementation 'com.microsoft.azure:azure-relay:0.0.5'
 	implementation 'org.apache.commons:commons-lang3:3.10'
+	implementation 'org.apache.httpcomponents:httpclient:4.5.13'
 	implementation 'io.projectreactor:reactor-core:3.4.14'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'

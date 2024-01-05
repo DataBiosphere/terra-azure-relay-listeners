@@ -5,10 +5,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
-import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -178,18 +179,63 @@ class RelayedHttpRequestProcessorTest {
 
   @Test
   void writeTargetResponseOnCaller_removesInvalidAzureRelayHeaders() throws IOException {
+    validateHeaderRemoval("Transfer-Encoding", "chunked");
+    validateHeaderRemoval("transfer-encoding", "chunked");
+  }
+
+  @Test
+  /** @see https://broadworkbench.atlassian.net/browse/IA-4478 */
+  void writeTargetResponseOnCaller_removesServerHeaders() throws IOException {
+    validateHeaderRemoval("Server", "Microsoft-HTTPAPI/2.0");
+  }
+
+  private void validateHeaderRemoval(String headerKey, String headerVal) {
+    Map<String, String> listenerHeaders = mock(HashMap.class);
+    when(listenerResponse.getHeaders()).thenReturn(listenerHeaders);
+
     when(targetHttpResponse.getContext()).thenReturn(context);
-    when(targetHttpResponse.getBody()).thenReturn(Optional.of(body));
-    when(targetHttpResponse.getStatusCode()).thenReturn(200);
-    Map<String, String> headers = new HashMap();
-    headers.put("transfer-encoding", "chunked");
-    when(targetHttpResponse.getHeaders()).thenReturn(Optional.of(headers));
     when(context.getResponse()).thenReturn(listenerResponse);
+
+    when(targetHttpResponse.getStatusCode()).thenReturn(200);
+
+    // skip #getStatusDescription(...) validation
+
+    Map<String, String> targetHeaders = new HashMap();
+    targetHeaders.put(headerKey, headerVal);
+    when(targetHttpResponse.getHeaders()).thenReturn(Optional.of(targetHeaders));
+
+    // these are needed to make sure the method doesn't Result.FAILURE-out
+    when(targetHttpResponse.getBody()).thenReturn(Optional.of(body));
     when(targetHttpResponse.getCallerResponseOutputStream()).thenReturn(responseStream);
 
     processor.writeTargetResponseOnCaller(targetHttpResponse);
+    verify(listenerHeaders).putAll(targetHeaders);
+    verify(listenerHeaders).remove(headerKey);
+  }
 
-    assertThat(listenerResponse.getHeaders(), not(hasEntry("transfer-encoding", "chunked")));
+  @Test
+  /** @see https://broadworkbench.atlassian.net/browse/IA-4479 */
+  void writeTargetResponseOnCaller_setsNoSniff() throws IOException {
+    Map<String, String> listenerHeaders = mock(HashMap.class);
+    when(listenerResponse.getHeaders()).thenReturn(listenerHeaders);
+
+    when(targetHttpResponse.getContext()).thenReturn(context);
+    when(context.getResponse()).thenReturn(listenerResponse);
+
+    when(targetHttpResponse.getStatusCode()).thenReturn(200);
+
+    // skip #getStatusDescription(...) validation
+
+    // needed to ensure header is set regardless of target header situation
+    when(targetHttpResponse.getHeaders()).thenReturn(Optional.empty());
+
+    // these are needed to make sure the method doesn't Result.FAILURE-out
+    when(targetHttpResponse.getBody()).thenReturn(Optional.of(body));
+    when(targetHttpResponse.getCallerResponseOutputStream()).thenReturn(responseStream);
+
+    processor.writeTargetResponseOnCaller(targetHttpResponse);
+    verify(listenerHeaders, never()).putAll(any());
+    verify(listenerHeaders).put("X-Content-Type-Options", "nosniff");
   }
 
   @Test
@@ -307,7 +353,8 @@ class RelayedHttpRequestProcessorTest {
       // Verify Set-Cookie response header
       assertThat(
           listenerResponse.getHeaders(),
-          hasEntry("Set-Cookie", "LeoToken=token; Max-Age=0; Path=/; Secure; SameSite=None; HttpOnly"));
+          hasEntry(
+              "Set-Cookie", "LeoToken=token; Max-Age=0; Path=/; Secure; SameSite=None; HttpOnly"));
       // Verify CORS headers were set
       expectedCorsHeaders.forEach(h -> assertThat(listenerResponse.getHeaders(), hasKey(h)));
       verify(samResourceClient).isUserEnabled(anyString());

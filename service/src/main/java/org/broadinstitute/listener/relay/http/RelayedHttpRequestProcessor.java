@@ -271,6 +271,9 @@ public class RelayedHttpRequestProcessor {
       removeHeadersNotAcceptedByAzureRelay(listenerResponse.getHeaders());
     }
 
+    // ensure anti-sniffing header is set (regardless of targetResponse header status)
+    listenerResponse.getHeaders().put("X-Content-Type-Options", "nosniff");
+
     logRequest(targetResponse.getContext().getRequest(), targetResponse.getStatusCode());
 
     OutputStream outputStream = targetResponse.getCallerResponseOutputStream();
@@ -314,6 +317,7 @@ public class RelayedHttpRequestProcessor {
   private void removeHeadersNotAcceptedByAzureRelay(Map<String, String> headers) {
     headers.remove("transfer-encoding");
     headers.remove("Transfer-Encoding");
+    headers.remove("Server");
   }
 
   public TargetHttpResponse handleExceptionResponse(

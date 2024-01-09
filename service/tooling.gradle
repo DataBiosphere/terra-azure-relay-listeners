@@ -18,7 +18,15 @@ idea.module.downloadJavadoc = true
 
 // Immutables has incremental compilation disabled by default
 tasks {
+	boolean isCiServer = System.getenv().containsKey("CI")
+
 	compileJava {
 		options.compilerArgs.add("-Aimmutables.gradle.incremental")
+		// https://broadworkbench.atlassian.net/browse/IA-4442
+		if (isCiServer) {
+			dependsOn(spotlessCheck)
+		} else {
+			dependsOn(spotlessApply)
+		}
 	}
 }

@@ -10,15 +10,15 @@ public abstract class HttpMessage {
   private final InputStream body;
 
   protected HttpMessage(Map<String, String> headers, InputStream body) {
-    this.headers = headers;
-    this.body = body;
+  this.headers = headers;
+  this.body = body;
   }
 
   public Optional<Map<String, String>> getHeaders() {
-    return Optional.ofNullable(headers);
+  return Optional.ofNullable(headers);
   }
 
   public Optional<InputStream> getBody() {
-    return Optional.ofNullable(body);
+  return Optional.ofNullable(body);
   }
 }

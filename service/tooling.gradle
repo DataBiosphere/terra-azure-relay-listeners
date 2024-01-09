@@ -12,13 +12,21 @@ spotless {
 	}
 }
 
-compileJava.dependsOn spotlessApply
-
 idea.module.downloadJavadoc = true
 
 // Immutables has incremental compilation disabled by default
 tasks {
+	boolean isCiServer = System.getenv().containsKey("CI")
+
 	compileJava {
 		options.compilerArgs.add("-Aimmutables.gradle.incremental")
+
+		// enforce consistency in CI environment, and
+		// enable auto-format in development environment
+		if (isCiServer) {
+			dependsOn(spotlessCheck)
+		} else {
+			dependsOn(spotlessApply)
+		}
 	}
 }

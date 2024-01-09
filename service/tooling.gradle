@@ -20,7 +20,9 @@ tasks {
 
 	compileJava {
 		options.compilerArgs.add("-Aimmutables.gradle.incremental")
-		// https://broadworkbench.atlassian.net/browse/IA-4442
+
+		// enforce consistency in CI environment, and
+		// enable auto-format in development environment
 		if (isCiServer) {
 			dependsOn(spotlessCheck)
 		} else {

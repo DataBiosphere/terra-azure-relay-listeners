@@ -187,6 +187,7 @@ class RelayedHttpRequestProcessorTest {
   /** @see https://broadworkbench.atlassian.net/browse/IA-4478 */
   void writeTargetResponseOnCaller_removesServerHeaders() throws IOException {
     validateHeaderRemoval("Server", "Microsoft-HTTPAPI/2.0");
+    validateHeaderRemoval("server", "Microsoft-HTTPAPI/2.0");
   }
 
   private void validateHeaderRemoval(String headerKey, String headerVal) {

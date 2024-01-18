@@ -276,7 +276,6 @@ public class RelayedHttpRequestProcessor {
     listenerResponse.getHeaders().remove("Server");
     listenerResponse.getHeaders().remove("server");
 
-
     logRequest(targetResponse.getContext().getRequest(), targetResponse.getStatusCode());
 
     OutputStream outputStream = targetResponse.getCallerResponseOutputStream();

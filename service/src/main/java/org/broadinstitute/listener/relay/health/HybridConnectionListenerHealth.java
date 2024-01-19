@@ -6,9 +6,8 @@ import org.springframework.boot.actuate.health.Health.Builder;
 import org.springframework.stereotype.Component;
 
 /**
- * Contributes to Actuator health reporting. This health check
- * signals if the HybridConnectionListener used by this listener
- * is currently online.
+ * Contributes to Actuator health reporting. This health check signals if the
+ * HybridConnectionListener used by this listener is currently online.
  */
 @Component
 public class HybridConnectionListenerHealth extends AbstractHealthIndicator {

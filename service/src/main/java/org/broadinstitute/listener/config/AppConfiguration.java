@@ -19,6 +19,8 @@ import org.broadinstitute.listener.relay.inspectors.SetDateAccessedInspectorOpti
 import org.broadinstitute.listener.relay.inspectors.TokenChecker;
 import org.broadinstitute.listener.relay.transport.DefaultTargetResolver;
 import org.broadinstitute.listener.relay.transport.TargetResolver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.HealthEndpoint;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -77,14 +79,23 @@ public class AppConfiguration {
 
   @Bean
   public HybridConnectionListener listener() throws URISyntaxException {
+    Logger logger = LoggerFactory.getLogger(HybridConnectionListener.class);
     RelayConnectionStringBuilder connectionParams =
         new RelayConnectionStringBuilder(properties.getRelayConnectionString());
     TokenProvider tokenProvider =
         TokenProvider.createSharedAccessSignatureTokenProvider(
             connectionParams.getSharedAccessKeyName(), connectionParams.getSharedAccessKey());
-    return new HybridConnectionListener(
-        new URI(connectionParams.getEndpoint().toString() + connectionParams.getEntityPath()),
-        tokenProvider);
+    HybridConnectionListener hybridConnectionListener =
+        new HybridConnectionListener(
+            new URI(connectionParams.getEndpoint().toString() + connectionParams.getEntityPath()),
+            tokenProvider);
+
+    hybridConnectionListener.setOfflineHandler(
+        t -> logger.warn("HybridConnectionListener is now offline"));
+    hybridConnectionListener.setOnlineHandler(
+        () -> logger.warn("HybridConnectionListener is now online"));
+
+    return hybridConnectionListener;
   }
 
   @Bean

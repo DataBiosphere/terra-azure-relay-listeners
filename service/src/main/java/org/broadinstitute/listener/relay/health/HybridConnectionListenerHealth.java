@@ -26,7 +26,7 @@ public class HybridConnectionListenerHealth extends AbstractHealthIndicator {
       } else {
         builder.down().withDetail("reason", "HybridConnectionListener is offline");
       }
-    } catch (Throwable ex) {
+    } catch (Exception ex) {
       builder.down(ex);
     }
   }

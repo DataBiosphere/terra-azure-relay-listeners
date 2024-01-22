@@ -98,5 +98,8 @@ management:
     health:
       enabled: true
       probes.enabled: true
+      group:
+        liveness:
+          include: livenessState,hybridConnectionListenerHealth
   health:
     defaults.enabled: false

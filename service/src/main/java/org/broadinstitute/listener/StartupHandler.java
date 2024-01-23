@@ -25,13 +25,13 @@ public class StartupHandler {
   }
 
   @EventListener(ApplicationReadyEvent.class)
+  @SuppressWarnings("java:S1181") // intentionally catches Throwable, not Exception
   public void startProcessingRequests() throws ListenerException {
     logger.info("Starting pipeline to process relayed requests ... ");
     try {
       this.relayedRequestPipeline.processRelayedRequests();
       logger.info("Relayed requests pipeline started.");
     } catch (Throwable t) {
-      logger.error("Error starting relayed requests pipeline: {}", t.getMessage());
       AvailabilityChangeEvent.publish(context, LivenessState.BROKEN);
       throw new ListenerException("Error during listener startup: " + t.getMessage(), t);
     }

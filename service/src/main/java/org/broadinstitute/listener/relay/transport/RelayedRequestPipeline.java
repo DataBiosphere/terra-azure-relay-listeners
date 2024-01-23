@@ -41,10 +41,10 @@ public class RelayedRequestPipeline {
   }
 
   public void processRelayedRequests() {
-    logger.debug("Registering HTTP pipeline");
+    logger.info("Registering HTTP pipeline");
     registerHttpExecutionPipeline(Schedulers.boundedElastic());
 
-    logger.debug("Registering WebSocket upgrades pipeline");
+    logger.info("Registering WebSocket upgrades pipeline");
     webSocketConnectionsHandler
         .acceptHttpUpgradeRequests()
         .subscribe(

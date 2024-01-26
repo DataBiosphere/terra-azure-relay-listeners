@@ -3,13 +3,19 @@ package org.broadinstitute.listener.relay.http;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.microsoft.azure.relay.HybridConnectionListener;
+import org.broadinstitute.listener.StartupHandler;
+import org.broadinstitute.listener.relay.ListenerException;
 import org.broadinstitute.listener.relay.health.HybridConnectionListenerHealth;
+import org.broadinstitute.listener.relay.transport.RelayedRequestPipeline;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,12 +45,18 @@ class AvailabilityTest {
   @Autowired private ApplicationContext context;
   @Autowired private ApplicationAvailability applicationAvailability;
   @Autowired private HybridConnectionListenerHealth hybridConnectionListenerHealth;
+  @Autowired private StartupHandler startupHandler;
 
   @MockBean private HybridConnectionListener hybridConnectionListener;
+  @MockBean private RelayedRequestPipeline relayedRequestPipeline;
 
   @BeforeEach
   void beforeEach() {
     when(hybridConnectionListener.isOnline()).thenReturn(true);
+    doNothing().when(relayedRequestPipeline).processRelayedRequests();
+    // set liveness and readiness to ok before each test; prevents crosstalk between tests
+    AvailabilityChangeEvent.publish(context, LivenessState.CORRECT);
+    AvailabilityChangeEvent.publish(context, ReadinessState.ACCEPTING_TRAFFIC);
   }
 
   // Reference: https://www.baeldung.com/spring-liveness-readiness-probes
@@ -126,5 +138,37 @@ class AvailabilityTest {
         "Liveness state should be CORRECT",
         applicationAvailability.getLivenessState(),
         equalTo(LivenessState.CORRECT));
+  }
+
+  /**
+   * Verify that an error during startup sets liveness state to broken.
+   *
+   * @throws Exception on exception in the test
+   */
+  @Test
+  void processRelayedRequestsError() throws Exception {
+    // livenessState and liveness probe should both be ok, to start
+    assertThat(
+        "Liveness state should be CORRECT",
+        applicationAvailability.getLivenessState(),
+        equalTo(LivenessState.CORRECT));
+    ResultActions livenessResult = mvc.perform(get("/actuator/health/liveness"));
+    livenessResult.andExpect(status().isOk()).andExpect(jsonPath("$.status").value("UP"));
+
+    // mock processRelayedRequests to throw an exception
+    doThrow(new RuntimeException("intentional failure for unit test"))
+        .when(relayedRequestPipeline)
+        .processRelayedRequests();
+    // and re-run the startup handler, mimicking startup
+    assertThrows(ListenerException.class, () -> startupHandler.startProcessingRequests());
+
+    // liveness state and liveness probe should now show failure
+    assertThat(
+        "Liveness state should be BROKEN",
+        applicationAvailability.getLivenessState(),
+        equalTo(LivenessState.BROKEN));
+    mvc.perform(get("/actuator/health/liveness"))
+        .andExpect(status().isServiceUnavailable())
+        .andExpect(jsonPath("$.status").value("DOWN"));
   }
 }

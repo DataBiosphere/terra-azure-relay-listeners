@@ -90,7 +90,7 @@ public class ListenerConnectionHandler {
   public Mono<String> openConnection() {
     return Mono.create(
         sink -> {
-          logger.debug("Opening connection to Azure Relay.");
+          logger.info("Opening connection to Azure Relay.");
           listener
               .openAsync()
               .whenComplete(

@@ -152,8 +152,6 @@ class AvailabilityTest {
         "Liveness state should be CORRECT",
         applicationAvailability.getLivenessState(),
         equalTo(LivenessState.CORRECT));
-    ResultActions result = mvc.perform(get("/actuator/health/liveness"));
-    result.andExpect(status().isOk()).andExpect(jsonPath("$.status").value("UP"));
     ResultActions livenessResult = mvc.perform(get("/actuator/health/liveness"));
     livenessResult.andExpect(status().isOk()).andExpect(jsonPath("$.status").value("UP"));
 

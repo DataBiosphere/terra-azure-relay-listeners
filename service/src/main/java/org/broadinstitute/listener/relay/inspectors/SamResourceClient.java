@@ -45,6 +45,8 @@ public class SamResourceClient {
   public Instant checkPermission(String accessToken) {
     try {
       var oauthInfo = tokenChecker.getOauthInfo(accessToken);
+      // TODO REMOVEME
+      logger.info("JWT = {}", accessToken);
       if (oauthInfo.expiresAt().isPresent()) {
 
         var apiClient = getApiClient(accessToken);
@@ -54,7 +56,7 @@ public class SamResourceClient {
         boolean workspaceAccess =
             resourceApi.resourcePermissionV2("workspace", workspaceId.toString(), "read");
         if (!workspaceAccess) {
-          logger.error("Unauthorized request. User doesn't have access to workspace.");
+          logger.error("Unauthorized request. User doesn't have access to workspace. Info = {}");
           return Instant.EPOCH;
         }
 

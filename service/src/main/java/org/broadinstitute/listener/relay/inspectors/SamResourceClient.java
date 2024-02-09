@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 
 public class SamResourceClient {
+
   private final UUID workspaceId;
   private final String samUrl;
   private final String samResourceId;
@@ -51,16 +52,17 @@ public class SamResourceClient {
         var resourceApi = new ResourcesApi(apiClient);
 
         // check that user has access to workspace
-//        boolean workspaceAccess =
-//            resourceApi.resourcePermissionV2("workspace", workspaceId.toString(), "read");
-//        if (!workspaceAccess) {
-//          logger.error("Unauthorized request. User doesn't have access to workspace.");
-//          return Instant.EPOCH;
-//        }
+        //        boolean workspaceAccess =
+        //            resourceApi.resourcePermissionV2("workspace", workspaceId.toString(), "read");
+        //        if (!workspaceAccess) {
+        //          logger.error("Unauthorized request. User doesn't have access to workspace.");
+        //          return Instant.EPOCH;
+        //        }
 
         var res = resourceApi.resourcePermissionV2(samResourceType, samResourceId, samAction);
-        if (res) return oauthInfo.expiresAt().get();
-        else {
+        if (res) {
+          return oauthInfo.expiresAt().get();
+        } else {
           logger.error("unauthorized request");
           return Instant.EPOCH;
         }

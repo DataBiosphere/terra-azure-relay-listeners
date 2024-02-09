@@ -42,7 +42,7 @@ public class SamResourceClient {
   }
 
   // Should only be used in checkCachedPermission, but making it public so that we can test it
-  @Cacheable("expiresAt")
+  //@Cacheable("expiresAt")
   public Instant checkPermission(String accessToken) {
     try {
       var oauthInfo = tokenChecker.getOauthInfo(accessToken);

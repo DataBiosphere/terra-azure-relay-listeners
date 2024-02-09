@@ -11,7 +11,6 @@ import org.broadinstitute.dsde.workbench.client.sam.api.ResourcesApi;
 import org.broadinstitute.dsde.workbench.client.sam.api.UsersApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.Cacheable;
 
 public class SamResourceClient {
 
@@ -42,7 +41,7 @@ public class SamResourceClient {
   }
 
   // Should only be used in checkCachedPermission, but making it public so that we can test it
-  //@Cacheable("expiresAt")
+  // @Cacheable("expiresAt")
   public Instant checkPermission(String accessToken) {
     try {
       var oauthInfo = tokenChecker.getOauthInfo(accessToken);

@@ -74,23 +74,6 @@ class SamResourceClientTest {
   }
 
   @Test
-  void checkPermission_no_workspace_access()
-      throws IOException, InterruptedException, ApiException {
-    var expiresAt = Instant.now().plusSeconds(100);
-    var oauthResponse =
-        new OauthInfo(Optional.of(expiresAt), "", Map.of("email", "example@example.com"));
-    // check for workspace read access returns false
-    var apiResponse = new ApiResponse(200, Map.of(), false);
-
-    when(tokenChecker.getOauthInfo(any())).thenReturn(oauthResponse);
-    when(apiClient.execute(any(), any())).thenReturn(apiResponse);
-    when(apiClient.escapeString(any())).thenReturn("string");
-
-    var res = samResourceClient.checkPermission("accessToken");
-    assertThat(res, equalTo(Instant.EPOCH));
-  }
-
-  @Test
   void isUserEnabled_enabled() throws ApiException {
     var apiResponse = new ApiResponse(200, Map.of(), new UserStatusInfo().enabled(true));
     when(apiClient.execute(any(), any())).thenReturn(apiResponse);

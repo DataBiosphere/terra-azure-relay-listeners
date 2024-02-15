@@ -43,7 +43,6 @@ public class AppConfiguration {
   @Bean
   public SamResourceClient samResourceClient(TokenChecker tokenChecker) {
     return new SamResourceClient(
-        properties.getSetDateAccessedInspectorProperties().workspaceId(),
         properties.getSamInspectorProperties().samUrl(),
         properties.getSamInspectorProperties().samResourceId(),
         properties.getSamInspectorProperties().samResourceType(),

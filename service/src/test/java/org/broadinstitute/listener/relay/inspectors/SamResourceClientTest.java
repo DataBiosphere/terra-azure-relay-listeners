@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import org.broadinstitute.dsde.workbench.client.sam.ApiClient;
 import org.broadinstitute.dsde.workbench.client.sam.ApiException;
 import org.broadinstitute.dsde.workbench.client.sam.ApiResponse;
@@ -36,8 +35,7 @@ class SamResourceClientTest {
 
   @Spy
   private SamResourceClient samResourceClient =
-      new SamResourceClient(
-          UUID.randomUUID(), "samUrl", "resourceId", "resourceType", tokenChecker, "myaction");
+      new SamResourceClient("samUrl", "resourceId", "resourceType", tokenChecker, "myaction");
 
   @BeforeEach
   void setUp() throws IOException, InterruptedException, ApiException {

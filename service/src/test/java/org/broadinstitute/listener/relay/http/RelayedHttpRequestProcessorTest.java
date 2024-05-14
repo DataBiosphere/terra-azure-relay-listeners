@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -51,6 +52,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.actuate.health.HealthComponent;
 import org.springframework.boot.actuate.health.HealthEndpoint;
@@ -69,7 +71,6 @@ class RelayedHttpRequestProcessorTest {
 
   @Mock private HttpClient httpClient;
 
-  @Mock private InputStream mockBody;
   @Mock private RelayedHttpListenerContext context;
   @Mock private RelayedHttpListenerRequest listenerRequest;
   @Mock private RelayedHttpRequest request;
@@ -172,9 +173,14 @@ class RelayedHttpRequestProcessorTest {
 
     processor.writeTargetResponseOnCaller(targetHttpResponse);
 
-    verify(responseStream).write(responseData.capture());
+    // writeTargetResponseOnCaller relies on StreamUtils.copy, which specifies
+    // an offset and length in its call to write()
+    verify(responseStream).write(responseData.capture(), anyInt(), anyInt());
 
-    assertThat(new String(responseData.getValue()), equalTo(BODY_CONTENT));
+    // StreamUtils.copy buffers its writes in arrays of 4096 bytes (by default). Since this
+    // test uses a small response, we need to trim the empty part of the array before comparing
+    // the result
+    assertThat(new String(responseData.getValue()).trim(), equalTo(BODY_CONTENT));
   }
 
   @Test
@@ -241,8 +247,12 @@ class RelayedHttpRequestProcessorTest {
 
   @Test
   void writeTargetResponseOnCaller_withBodyResponseStreamsClose() throws IOException {
+    // this test uses a spy to verify we close its stream
+    InputStream spyBody =
+        Mockito.spy(new ByteArrayInputStream(BODY_CONTENT.getBytes(StandardCharsets.UTF_8)));
+
     when(targetHttpResponse.getContext()).thenReturn(context);
-    when(targetHttpResponse.getBody()).thenReturn(Optional.of(mockBody));
+    when(targetHttpResponse.getBody()).thenReturn(Optional.of(spyBody));
     when(targetHttpResponse.getStatusCode()).thenReturn(200);
     when(context.getResponse()).thenReturn(listenerResponse);
     when(targetHttpResponse.getCallerResponseOutputStream()).thenReturn(responseStream);
@@ -250,7 +260,7 @@ class RelayedHttpRequestProcessorTest {
     processor.writeTargetResponseOnCaller(targetHttpResponse);
 
     verify(responseStream).close();
-    verify(mockBody).close();
+    verify(spyBody).close();
   }
 
   @Test

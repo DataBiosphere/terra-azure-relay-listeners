@@ -284,7 +284,6 @@ public class RelayedHttpRequestProcessor {
     Result result = Result.SUCCESS;
     if (targetResponse.getBody().isPresent()) {
       try {
-        // buffer the response back to the caller.
         StreamUtils.copy(targetResponse.getBody().get(), outputStream);
       } catch (IOException e) {
         logger.error("Failed to write response body to the remote client.", e);

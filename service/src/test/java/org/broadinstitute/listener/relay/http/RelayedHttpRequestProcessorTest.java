@@ -8,9 +8,11 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -20,6 +22,8 @@ import com.microsoft.azure.relay.RelayedHttpListenerRequest;
 import com.microsoft.azure.relay.RelayedHttpListenerResponse;
 import com.microsoft.azure.relay.TrackingContext;
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -31,13 +35,17 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.broadinstitute.listener.config.CorsSupportProperties;
 import org.broadinstitute.listener.relay.InvalidRelayTargetException;
 import org.broadinstitute.listener.relay.http.RelayedHttpRequestProcessor.Result;
@@ -57,6 +65,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.actuate.health.HealthComponent;
 import org.springframework.boot.actuate.health.HealthEndpoint;
 import org.springframework.boot.actuate.health.Status;
+import org.springframework.util.StreamUtils;
 
 @ExtendWith(MockitoExtension.class)
 class RelayedHttpRequestProcessorTest {
@@ -261,6 +270,99 @@ class RelayedHttpRequestProcessorTest {
 
     verify(responseStream).close();
     verify(spyBody).close();
+  }
+
+  /**
+   * Given a large - multi-MB - http response, ensure the response is buffered back to the caller in
+   * multiple writes.
+   *
+   * @throws IOException on temp file error
+   */
+  @Test
+  void writeTargetResponseOnCaller_withLargeBodyContent() throws IOException {
+    // write a bunch of junk data to a temp file
+    int numBufferChunks = 2000; // 2000 chunks * 4096 bytes/chunk = ~7.8MB
+    Path inputFile = Files.createTempFile("input-", ".tmp");
+    FileOutputStream fileOutputStream = new FileOutputStream(inputFile.toFile());
+    for (int i = 0; i < numBufferChunks; i++) {
+      fileOutputStream.write(
+          RandomStringUtils.randomAlphanumeric(StreamUtils.BUFFER_SIZE)
+              .getBytes(StandardCharsets.UTF_8));
+    }
+    fileOutputStream.close();
+
+    // create an InputStream from the temp file
+    FileInputStream fileInputStream = Mockito.spy(new FileInputStream(inputFile.toFile()));
+
+    // set the InputStream as the HTTP response
+    when(targetHttpResponse.getContext()).thenReturn(context);
+    when(targetHttpResponse.getBody()).thenReturn(Optional.of(fileInputStream));
+    when(targetHttpResponse.getStatusCode()).thenReturn(200);
+    when(context.getResponse()).thenReturn(listenerResponse);
+    when(targetHttpResponse.getCallerResponseOutputStream()).thenReturn(responseStream);
+
+    // write HTTP response to caller
+    processor.writeTargetResponseOnCaller(targetHttpResponse);
+
+    // verify that the HTTP response was buffered to the caller in chunks; we should have written
+    // to the caller ${numBufferChunks} times, because the temp file is of size
+    // ${numBufferChunks * StreamUtils.BUFFER_SIZE}
+    verify(responseStream, times(numBufferChunks)).write(any(), anyInt(), anyInt());
+
+    // verify everything was closed
+    verify(responseStream).close();
+    verify(fileInputStream).close();
+
+    // clean up
+    Files.delete(inputFile);
+  }
+
+  /**
+   * Given a medium-sized (50KB) http response file, ensure that the response is buffered to the
+   * caller and that what the caller receives is equivalent to http response
+   *
+   * @throws IOException on temp file error
+   */
+  @Test
+  void writeTargetResponseOnCaller_withMultipleChunks() throws IOException {
+    // create an InputStream from a sample text file
+    InputStream fileInputStream =
+        Mockito.spy(
+            Objects.requireNonNull(ClassLoader.getSystemResourceAsStream("sample-text.txt")));
+
+    // create a temp file to serve as our output stream
+    Path outputFile = Files.createTempFile("output-", ".tmp");
+    FileOutputStream responseOutputStream = Mockito.spy(new FileOutputStream(outputFile.toFile()));
+
+    // set the InputStream as the HTTP response
+    when(targetHttpResponse.getContext()).thenReturn(context);
+    when(targetHttpResponse.getBody()).thenReturn(Optional.of(fileInputStream));
+    when(targetHttpResponse.getStatusCode()).thenReturn(200);
+    when(context.getResponse()).thenReturn(listenerResponse);
+    when(targetHttpResponse.getCallerResponseOutputStream()).thenReturn(responseOutputStream);
+
+    // write HTTP response to caller
+    processor.writeTargetResponseOnCaller(targetHttpResponse);
+
+    // verify that the HTTP response was buffered to the caller in chunks. We should have written
+    // more than one chunk given the size of the input file.
+    verify(responseOutputStream, atLeast(1)).write(any(), anyInt(), anyInt());
+
+    // verify everything was closed
+    verify(responseOutputStream).close();
+    verify(fileInputStream).close();
+
+    // compare file contents
+    String expected =
+        new String(
+            Objects.requireNonNull(ClassLoader.getSystemResourceAsStream("sample-text.txt"))
+                .readAllBytes());
+    String actual = new String(Files.readAllBytes(outputFile));
+
+    assertThat("file contents differ", actual.equals(expected));
+
+    // clean up
+    Files.delete(outputFile);
   }
 
   @Test

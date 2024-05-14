@@ -7,6 +7,10 @@ spring:
     cache-names: expiresAt
     caffeine.spec: maximumSize=100,expireAfterWrite=90s
 
+logging:
+  level:
+    com.microsoft.azure.relay.RelayLogger: WARN
+
 listener:
   # Connection string for the Azure Relay instance.
   #

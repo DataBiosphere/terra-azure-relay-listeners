@@ -32,6 +32,7 @@ import org.springframework.boot.actuate.health.HealthComponent;
 import org.springframework.boot.actuate.health.HealthEndpoint;
 import org.springframework.boot.actuate.health.Status;
 import org.springframework.lang.NonNull;
+import org.springframework.util.StreamUtils;
 
 public class RelayedHttpRequestProcessor {
 
@@ -283,7 +284,7 @@ public class RelayedHttpRequestProcessor {
     Result result = Result.SUCCESS;
     if (targetResponse.getBody().isPresent()) {
       try {
-        outputStream.write(targetResponse.getBody().get().readAllBytes());
+        StreamUtils.copy(targetResponse.getBody().get(), outputStream);
       } catch (IOException e) {
         logger.error("Failed to write response body to the remote client.", e);
         result = Result.FAILURE;

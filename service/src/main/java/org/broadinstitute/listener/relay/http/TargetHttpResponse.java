@@ -102,7 +102,8 @@ public class TargetHttpResponse extends HttpMessage {
                     // _xsrf=2|63084c74|2d3173085f60f5a3889e8c1e1879d0a6|1654868473; expires=Sun, 10
                     // Jul 2022 13:41:13 GMT; Path=/saturn-403635c5-c58b-4bcd-b3d1-55aa5bd8919d/
                     var cookieValue =
-                        String.format("%s; Secure; SameSite=None; HttpOnly; Partitioned", headerValue);
+                        String.format(
+                            "%s; Secure; SameSite=None; HttpOnly; Partitioned", headerValue);
                     responseHeaders.put(key, cookieValue);
                   } else responseHeaders.put(key, headerValue);
                 }
